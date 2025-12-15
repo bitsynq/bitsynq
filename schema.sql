@@ -1,15 +1,15 @@
 -- bitsynq projects
 CREATE TABLE projects (
-  id TEXT PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL
 );
 
 -- Contribution logs (ratio-based)
 CREATE TABLE contributions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  projectId TEXT NOT NULL,
+  projectId INTEGER NOT NULL,
   userId TEXT NOT NULL,
-  ratio REAL NOT NULL,        -- 0.0 ~ 100.0
+  ratio INTEGER NOT NULL,        -- e.g., 305 for 30.5%
   desc TEXT,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -23,7 +23,7 @@ CREATE TABLE users (
 -- Milestone reward history
 CREATE TABLE milestones (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  projectId TEXT NOT NULL,
+  projectId INTEGER NOT NULL,
   totalTokens INTEGER NOT NULL,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
