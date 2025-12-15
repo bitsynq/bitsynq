@@ -32,6 +32,9 @@ contract Bitsynq6909 {
     // Cloudflare Worker wallet address
     address public minter;
 
+    // Maximum number of recipients in a single batch mint
+    uint256 public constant BATCH_LIMIT = 100;
+
     // -------------------------------------------------------------
     // EVENTS
     // -------------------------------------------------------------
@@ -69,5 +72,19 @@ contract Bitsynq6909 {
     ) external onlyMinter {
         balanceOf[projectId][to] += amount;
         emit TransferSingle(msg.sender, address(0), to, projectId, amount);
+    }
+
+    function batchMint(
+        uint256 projectId,
+        address[] calldata to,
+        uint256[] calldata amounts
+    ) external onlyMinter {
+        require(to.length == amounts.length, "bitsynq: array length mismatch");
+        require(to.length <= BATCH_LIMIT, "bitsynq: batch limit exceeded");
+        for (uint256 i = 0; i < to.length; i++) {
+            require(to[i] != address(0), "bitsynq: mint to zero address");
+            balanceOf[projectId][to[i]] += amounts[i];
+            emit TransferSingle(msg.sender, address(0), to[i], projectId, amounts[i]);
+        }
     }
 }
