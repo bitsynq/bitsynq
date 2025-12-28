@@ -6,12 +6,12 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "bitsynq-db"
-database_id = "YOUR_DATABASE_ID"  # Replace after creating database
+database_id = "78f32d0d-3e4c-4b26-bdff-cfd740d38e05"
 
 # KV Namespace for session tokens
 [[kv_namespaces]]
 binding = "SESSION_KV"
-id = "YOUR_KV_NAMESPACE_ID"  # Replace after creating KV
+id = "39e73c6ee1c644b3b87948a4a8b18382"
 
 # Environment variables
 [vars]
