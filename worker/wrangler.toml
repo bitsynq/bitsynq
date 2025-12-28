@@ -20,6 +20,6 @@ CORS_ORIGIN = "https://bitsynq.pages.dev"
 
 # Google OAuth Configuration
 # Get these from: https://console.cloud.google.com/apis/credentials
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
+# GOOGLE_CLIENT_ID = "Set via wrangler secret"
 GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
 GOOGLE_REDIRECT_URI = "https://bitsynq.pages.dev/auth/google/callback"
