@@ -228,7 +228,7 @@ const canSubmit = computed(() =>
 
 function toggleParticipant(index: number) {
   const p = editableParticipants.value[index]
-  p.included = !p.included
+  // p.included is already updated by v-model
   if (!p.included) {
     p.ratio = 0
   } else {
