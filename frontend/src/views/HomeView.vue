@@ -12,23 +12,35 @@
           </p>
 
           <div class="d-flex justify-center gap-4">
-            <v-btn
-              color="primary"
-              size="large"
-              to="/register"
-              prepend-icon="mdi-account-plus"
-            >
-              開始使用
-            </v-btn>
-            <v-btn
-              variant="outlined"
-              color="primary"
-              size="large"
-              to="/login"
-              prepend-icon="mdi-login"
-            >
-              登入
-            </v-btn>
+            <template v-if="authStore.isAuthenticated">
+              <v-btn
+                color="primary"
+                size="large"
+                to="/dashboard"
+                prepend-icon="mdi-view-dashboard"
+              >
+                前往儀表板
+              </v-btn>
+            </template>
+            <template v-else>
+              <v-btn
+                color="primary"
+                size="large"
+                to="/register"
+                prepend-icon="mdi-account-plus"
+              >
+                開始使用
+              </v-btn>
+              <v-btn
+                variant="outlined"
+                color="primary"
+                size="large"
+                to="/login"
+                prepend-icon="mdi-login"
+              >
+                登入
+              </v-btn>
+            </template>
           </div>
         </div>
 
@@ -48,6 +60,10 @@
 </template>
 
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+
 const features = [
   {
     icon: 'mdi-upload',
