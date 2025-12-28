@@ -17,6 +17,7 @@
         variant="text"
         class="text-none mr-2"
         prepend-icon="mdi-account-circle"
+        to="/profile"
       >
         {{ authStore.currentUser.display_name }}
       </v-btn>

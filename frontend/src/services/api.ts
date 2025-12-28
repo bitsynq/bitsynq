@@ -11,6 +11,7 @@ export interface User {
 	id: string
 	email: string
 	display_name: string
+	aliases?: string[]
 	wallet_address: string | null
 	avatar_url: string | null
 	created_at: string
@@ -189,7 +190,9 @@ class ApiClient {
 
 		update: (data: {
 			display_name?: string
+			aliases?: string[]
 			wallet_address?: string
+			avatar_url?: string
 		}): Promise<User> => this.request('PUT', '/users/me', data),
 
 		search: (email: string): Promise<User[]> =>

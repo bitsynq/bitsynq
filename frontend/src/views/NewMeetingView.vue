@@ -78,13 +78,26 @@ Summary
           <v-table density="compact" class="mb-4">
             <thead>
               <tr>
+                <th style="width: 50px">啟用</th>
                 <th>參與者</th>
                 <th>對應成員</th>
-                <th class="text-right">比例</th>
+                <th class="text-right">原始比例</th>
+                <th class="text-right">分配比例</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(p, idx) in editableParticipants" :key="idx">
+              <tr
+                v-for="(p, idx) in editableParticipants"
+                :key="idx"
+                :class="{ 'text-medium-emphasis bg-grey-lighten-4': !p.included }"
+              >
+                <td>
+                  <v-checkbox-btn
+                    v-model="p.included"
+                    density="compact"
+                    @update:model-value="toggleParticipant(idx)"
+                  />
+                </td>
                 <td>{{ p.name }}</td>
                 <td>
                   <v-select
@@ -95,7 +108,11 @@ Summary
                     density="compact"
                     variant="plain"
                     hide-details
+                    :disabled="!p.included"
                   />
+                </td>
+                <td class="text-right text-caption">
+                  {{ p.originalRatio }}%
                 </td>
                 <td class="text-right">
                   <v-text-field
@@ -109,6 +126,7 @@ Summary
                     hide-details
                     class="ratio-input"
                     suffix="%"
+                    :disabled="!p.included"
                   />
                 </td>
               </tr>
@@ -175,6 +193,8 @@ const editableParticipants = ref<Array<{
   name: string
   matched_user_id: string | null
   ratio: number
+  included: boolean
+  originalRatio: number
 }>>([])
 
 const memberOptions = computed(() => {
@@ -189,18 +209,54 @@ const memberOptions = computed(() => {
 })
 
 const unmatchedParticipants = computed(() =>
-  editableParticipants.value.filter(p => !p.matched_user_id)
+  editableParticipants.value.filter(p => p.included && !p.matched_user_id)
+)
+
+const activeParticipants = computed(() =>
+  editableParticipants.value.filter(p => p.included)
 )
 
 const totalRatio = computed(() =>
-  editableParticipants.value.reduce((sum, p) => sum + (p.ratio || 0), 0)
+  activeParticipants.value.reduce((sum, p) => sum + (p.ratio || 0), 0)
 )
 
 const canSubmit = computed(() =>
-  editableParticipants.value.length > 0 &&
-  editableParticipants.value.every(p => p.matched_user_id) &&
+  activeParticipants.value.length > 0 &&
+  activeParticipants.value.every(p => p.matched_user_id) &&
   Math.abs(totalRatio.value - 100) < 1
 )
+
+function toggleParticipant(index: number) {
+  const p = editableParticipants.value[index]
+  p.included = !p.included
+  if (!p.included) {
+    p.ratio = 0
+  } else {
+    p.ratio = p.originalRatio
+  }
+  normalizeRatios()
+}
+
+function normalizeRatios() {
+  const active = activeParticipants.value
+  if (active.length === 0) return
+
+  const currentTotal = active.reduce((sum, p) => sum + p.originalRatio, 0)
+  if (currentTotal === 0) return
+
+  const scale = 100 / currentTotal
+
+  active.forEach(p => {
+    p.ratio = parseFloat((p.originalRatio * scale).toFixed(1))
+  })
+
+  // Fix rounding errors to ensure exactly 100%
+  const newTotal = active.reduce((sum, p) => sum + p.ratio, 0)
+  const diff = 100 - newTotal
+  if (Math.abs(diff) > 0.001) {
+    active[0].ratio = parseFloat((active[0].ratio + diff).toFixed(1))
+  }
+}
 
 const confidenceColor = computed(() => {
   if (!parsedData.value) return 'grey'
@@ -237,6 +293,8 @@ async function handleParse() {
       name: p.name,
       matched_user_id: p.matched_user_id || null,
       ratio: p.suggested_ratio,
+      originalRatio: p.suggested_ratio,
+      included: true,
     }))
 
     showSnackbar('解析完成！', 'success')
@@ -254,7 +312,7 @@ async function handleSubmit() {
   try {
     // Normalize ratios to exactly 100%
     const scale = 100 / totalRatio.value
-    const contributions = editableParticipants.value.map(p => ({
+    const contributions = activeParticipants.value.map(p => ({
       user_id: p.matched_user_id!,
       ratio: parseFloat((p.ratio * scale).toFixed(2)),
       description: `From meeting: ${title.value || 'Untitled'}`,
