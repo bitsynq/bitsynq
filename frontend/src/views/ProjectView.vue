@@ -176,7 +176,7 @@
                     </v-chip>
 
                     <v-btn
-                      v-if="project.current_user_role === 'admin' && meeting.status !== 'processed'"
+                      v-if="meeting.status !== 'processed' && (project.current_user_role === 'admin' || meeting.created_by === authStore.currentUser?.id)"
                       icon
                       size="small"
                       variant="text"
@@ -292,9 +292,11 @@
 <script setup lang="ts">
 import { ref, onMounted, inject, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { api, type Project, type Contribution, type Meeting } from '@/services/api'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar')!
 
 const projectId = computed(() => route.params.id as string)

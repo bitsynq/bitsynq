@@ -89,10 +89,10 @@ meetings.post('/:projectId/meetings', async (c) => {
 		const projectId = c.req.param('projectId');
 		const body = await c.req.json<CreateMeetingRequest>();
 
-		// Check if user is admin
+		// Check membership
 		const membership = await checkMembership(c.env.DB, projectId, userId);
-		if (!membership || membership.role !== 'admin') {
-			return c.json({ error: 'Only admins can add meetings' }, 403);
+		if (!membership) {
+			return c.json({ error: 'Project not found or access denied' }, 403);
 		}
 
 		// Validate input
@@ -301,19 +301,24 @@ meetings.delete('/:projectId/meetings/:meetingId', async (c) => {
 		const projectId = c.req.param('projectId');
 		const meetingId = c.req.param('meetingId');
 
-		// Check if user is admin
+		// Check membership
 		const membership = await checkMembership(c.env.DB, projectId, userId);
-		if (!membership || membership.role !== 'admin') {
-			return c.json({ error: 'Only admins can delete meetings' }, 403);
+		if (!membership) {
+			return c.json({ error: 'Project not found or access denied' }, 403);
 		}
 
-		// Check meeting status
+		// Check meeting status and ownership
 		const meeting = await c.env.DB.prepare(
-			`SELECT status FROM meetings WHERE id = ? AND project_id = ?`
-		).bind(meetingId, projectId).first<{ status: string }>();
+			`SELECT status, created_by FROM meetings WHERE id = ? AND project_id = ?`
+		).bind(meetingId, projectId).first<{ status: string; created_by: string }>();
 
 		if (!meeting) {
 			return c.json({ error: 'Meeting not found' }, 404);
+		}
+
+		// Only admin or creator can delete
+		if (membership.role !== 'admin' && meeting.created_by !== userId) {
+			return c.json({ error: 'Only admins or the creator can delete meetings' }, 403);
 		}
 
 		if (meeting.status === 'processed') {
