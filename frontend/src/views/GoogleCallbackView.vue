@@ -55,13 +55,8 @@ onMounted(async () => {
   }
 
   try {
-    // Exchange code for token
-    const response: AuthResponse = await api.auth.googleCallback(code)
-
-    // Store auth data
-    localStorage.setItem('token', response.token)
-    api.setToken(response.token)
-    await authStore.fetchCurrentUser()
+    // Exchange code for token via store action (updates state consistently)
+    await authStore.loginWithGoogle(code)
 
     showSnackbar('Google 登入成功！', 'success')
 

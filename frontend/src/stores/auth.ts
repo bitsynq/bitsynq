@@ -36,6 +36,11 @@ export const useAuthStore = defineStore('auth', () => {
 		setAuth(response)
 	}
 
+	async function loginWithGoogle(code: string): Promise<void> {
+		const response = await api.auth.googleCallback(code)
+		setAuth(response)
+	}
+
 	function setAuth(response: AuthResponse): void {
 		token.value = response.token
 		user.value = response.user
@@ -78,6 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
 		currentUser,
 		login,
 		register,
+		loginWithGoogle,
 		logout,
 		fetchCurrentUser,
 	}
