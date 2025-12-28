@@ -166,12 +166,26 @@
                   </v-avatar>
                 </template>
                 <template #append>
-                  <v-chip
-                    :color="meeting.status === 'processed' ? 'success' : 'warning'"
-                    size="small"
-                  >
-                    {{ meeting.status === 'processed' ? '已處理' : '待處理' }}
-                  </v-chip>
+                  <div class="d-flex align-center gap-2">
+                    <v-chip
+                      :color="meeting.status === 'processed' ? 'success' : 'warning'"
+                      size="small"
+                      class="mr-2"
+                    >
+                      {{ meeting.status === 'processed' ? '已處理' : '待處理' }}
+                    </v-chip>
+
+                    <v-btn
+                      v-if="project.current_user_role === 'admin' && meeting.status !== 'processed'"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="error"
+                      @click="confirmDeleteMeeting(meeting)"
+                    >
+                      <v-icon>mdi-delete</v-icon>
+                    </v-btn>
+                  </div>
                 </template>
               </v-list-item>
             </v-list>
@@ -181,6 +195,27 @@
             </div>
           </v-card>
         </v-window-item>
+
+        <!-- Delete Meeting Confirmation Dialog -->
+        <v-dialog v-model="showDeleteMeetingDialog" max-width="400">
+          <v-card>
+            <v-card-title>刪除會議記錄</v-card-title>
+            <v-card-text>
+              確定要刪除「{{ meetingToDelete?.title || '此會議' }}」嗎？此動作無法復原。
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn variant="text" @click="showDeleteMeetingDialog = false">取消</v-btn>
+              <v-btn
+                color="error"
+                :loading="deletingMeeting"
+                @click="handleDeleteMeeting"
+              >
+                刪除
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
 
         <!-- Members Tab -->
         <v-window-item value="members">
@@ -277,6 +312,10 @@ const showAddMemberDialog = ref(false)
 const newMemberEmail = ref('')
 const addingMember = ref(false)
 
+const showDeleteMeetingDialog = ref(false)
+const meetingToDelete = ref<Meeting | null>(null)
+const deletingMeeting = ref(false)
+
 const contributionHeaders = [
   { title: '成員', key: 'user_display_name' },
   { title: '比例', key: 'ratio' },
@@ -351,6 +390,28 @@ async function handleAddMember() {
     showSnackbar(e.message || '新增成員失敗', 'error')
   } finally {
     addingMember.value = false
+  }
+}
+
+function confirmDeleteMeeting(meeting: Meeting) {
+  meetingToDelete.value = meeting
+  showDeleteMeetingDialog.value = true
+}
+
+async function handleDeleteMeeting() {
+  if (!meetingToDelete.value) return
+
+  deletingMeeting.value = true
+  try {
+    await api.meetings.delete(projectId.value, meetingToDelete.value.id)
+    showSnackbar('會議記錄已刪除', 'success')
+    showDeleteMeetingDialog.value = false
+    await loadMeetings()
+  } catch (e: any) {
+    showSnackbar(e.message || '刪除失敗', 'error')
+  } finally {
+    deletingMeeting.value = false
+    meetingToDelete.value = null
   }
 }
 
