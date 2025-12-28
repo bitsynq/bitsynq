@@ -80,9 +80,9 @@ googleAuth.post('/google/callback', async (c) => {
 		});
 
 		if (!tokenResponse.ok) {
-			const error = await tokenResponse.text();
-			console.error('Token exchange error:', error);
-			return c.json({ error: 'Failed to exchange authorization code' }, 400);
+			const errorText = await tokenResponse.text();
+			console.error('Token exchange error:', errorText);
+			return c.json({ error: 'Failed to exchange authorization code', details: errorText }, 400);
 		}
 
 		const tokens = await tokenResponse.json<{
