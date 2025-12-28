@@ -16,10 +16,10 @@ id = "39e73c6ee1c644b3b87948a4a8b18382"
 # Environment variables
 [vars]
 JWT_SECRET = "change-this-in-production"
-CORS_ORIGIN = "*"
+CORS_ORIGIN = "https://bitsynq.pages.dev"
 
 # Google OAuth Configuration
 # Get these from: https://console.cloud.google.com/apis/credentials
 GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
 GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
-GOOGLE_REDIRECT_URI = "http://localhost:5173/auth/google/callback"
+GOOGLE_REDIRECT_URI = "https://bitsynq.pages.dev/auth/google/callback"

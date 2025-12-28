@@ -127,7 +127,7 @@ export interface DistributionPreview {
 // =============================================================================
 
 class ApiClient {
-	private baseUrl: string = '/api'
+	private baseUrl: string = import.meta.env.VITE_API_BASE_URL || '/api'
 	private token: string | null = null
 
 	setToken(token: string | null): void {
