@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,                       -- Login email
     password_hash TEXT NOT NULL,                      -- Bcrypt hashed password
     display_name TEXT NOT NULL,                       -- Display name
+    aliases TEXT DEFAULT '[]',                        -- JSON array of alternate names
     wallet_address TEXT,                              -- Blockchain wallet (optional)
     avatar_url TEXT,                                  -- Profile picture URL
     created_at TEXT DEFAULT (datetime('now')),        -- ISO8601 timestamp

@@ -156,6 +156,22 @@ function extractSection(transcript: string, sectionName: string): string {
 }
 
 /**
+ * Split combined names like "Saad and Sunny"
+ */
+function splitCombinedNames(name: string): string[] {
+	if (name.includes(' and ')) {
+		return name.split(' and ').map(n => n.trim());
+	}
+	if (name.includes(' & ')) {
+		return name.split(' & ').map(n => n.trim());
+	}
+	if (name.includes(',')) {
+		return name.split(',').map(n => n.trim());
+	}
+	return [name];
+}
+
+/**
  * Parse Next Steps section to extract action items
  *
  * Expected formats:
@@ -174,12 +190,25 @@ function parseNextSteps(nextStepsSection: string): Array<{ name: string; task: s
 		// Supports both English and Chinese colons
 		const match = trimmed.match(/^([^:：]+)[：:]\s*(.+)$/);
 		if (match) {
-			const name = match[1].trim();
+			const rawName = match[1].trim();
 			const task = match[2].trim();
 
-			// Filter out section headers or very short names
-			if (name.length > 0 && name.length < 30 && !isHeaderLine(name)) {
-				actions.push({ name, task });
+			if (!isHeaderLine(rawName)) {
+				// Handle combined names e.g. "Saad and Sunny"
+				const names = splitCombinedNames(rawName);
+
+				for (const name of names) {
+					// Filter out common words and very short names (unless Chinese)
+					if (isCommonWord(name)) continue;
+
+					// English names usually > 2 chars, Chinese > 1
+					const isChinese = /[\u4e00-\u9fff]/.test(name);
+					if (name.length < 2 && !isChinese) continue;
+
+					if (name.length > 40) continue; // Name too long, likely text
+
+					actions.push({ name, task });
+				}
 			}
 		}
 	}
@@ -232,18 +261,24 @@ function parseSummaryForMentions(summarySection: string): Array<{ name: string; 
 }
 
 /**
- * Check if word is a common English word (not a name)
+ * Check if word is a common English word or term to ignore
  */
 function isCommonWord(word: string): boolean {
+	// Case-insensitive check
+	const lower = word.toLowerCase();
 	const commonWords = new Set([
-		'The', 'This', 'That', 'These', 'Those', 'Here', 'There',
-		'Meeting', 'Summary', 'Project', 'Team', 'Work', 'Week',
-		'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
-		'January', 'February', 'March', 'April', 'May', 'June',
-		'July', 'August', 'September', 'October', 'November', 'December',
-		'ChatGPT', 'BitSync', 'Ethereum', 'Layer', 'Token', 'Blockchain',
+		'the', 'this', 'that', 'these', 'those', 'here', 'there', 'they', 'them', 'their',
+		'he', 'she', 'it', 'we', 'you', 'i', 'us',
+		'meeting', 'summary', 'project', 'team', 'work', 'week',
+		'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
+		'january', 'february', 'march', 'april', 'may', 'june',
+		'july', 'august', 'september', 'october', 'november', 'december',
+		'chatgpt', 'bitsync', 'ethereum', 'layer', 'token', 'blockchain',
+		'strategic coach', 'ascender gmail', 'code', 'codex', 'white paper', 'development',
+		'bitcoin', 'zoom', 'update', 'update the', 'creation strategy',
+		'democratization trends', 'personal', 'academic achievements'
 	]);
-	return commonWords.has(word);
+	return commonWords.has(lower);
 }
 
 /**
@@ -309,7 +344,7 @@ function calculateConfidence(
  */
 export function matchParticipantsToMembers(
 	participants: ParsedParticipant[],
-	members: Array<{ id: string; display_name: string; email: string }>
+	members: Array<{ id: string; display_name: string; email: string; aliases?: string[] | string }>
 ): ParsedParticipant[] {
 	return participants.map(participant => {
 		const participantName = participant.name.toLowerCase().trim();
@@ -319,20 +354,40 @@ export function matchParticipantsToMembers(
 			const memberName = member.display_name.toLowerCase().trim();
 			const emailPrefix = member.email.split('@')[0].toLowerCase();
 
-			// Exact match
+			// 1. Exact match on display_name or email prefix
 			if (participantName === memberName) return true;
 			if (participantName === emailPrefix) return true;
 
-			// Partial match (contains)
-			if (memberName.includes(participantName)) return true;
-			if (participantName.includes(memberName)) return true;
+			// 2. Check aliases
+			if (member.aliases) {
+				let aliases: string[] = [];
+				if (Array.isArray(member.aliases)) {
+					aliases = member.aliases;
+				} else if (typeof member.aliases === 'string') {
+					try {
+						aliases = JSON.parse(member.aliases);
+					} catch (e) {
+						// Ignore parse error
+					}
+				}
 
-			// Email prefix match
-			if (emailPrefix.includes(participantName)) return true;
+				if (aliases.some(alias => alias.toLowerCase().trim() === participantName)) {
+					return true;
+				}
+			}
 
-			// Handle Chinese names with potential variations
-			// E.g., "和融" might match "黃和融" or "Huang Rong"
-			if (memberName.includes(participantName)) return true;
+			// 3. Partial match (contains) - only if name is long enough to be significant
+			if (participantName.length > 3) {
+				if (memberName.includes(participantName)) return true;
+				if (participantName.includes(memberName)) return true;
+				if (emailPrefix.includes(participantName)) return true;
+			}
+
+			// 4. Handle Chinese names (usually 2-3 chars, strict match)
+			// "和融" matches "黃和融"
+			if (/[\u4e00-\u9fff]/.test(participantName) && participantName.length >= 2) {
+				if (memberName.includes(participantName)) return true;
+			}
 
 			return false;
 		});

@@ -12,6 +12,7 @@ export interface User {
 	email: string;
 	password_hash: string;
 	display_name: string;
+	aliases?: string[]; // Parsed from JSON
 	wallet_address: string | null;
 	avatar_url: string | null;
 	created_at: string;

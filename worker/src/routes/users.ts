@@ -48,12 +48,21 @@ users.get('/me', async (c) => {
 		const userId = c.get('userId');
 
 		const user = await c.env.DB.prepare(
-			`SELECT id, email, display_name, wallet_address, avatar_url, created_at, updated_at
+			`SELECT id, email, display_name, aliases, wallet_address, avatar_url, created_at, updated_at
        FROM users WHERE id = ?`
 		).bind(userId).first<Omit<User, 'password_hash'>>();
 
 		if (!user) {
 			return c.json({ error: 'User not found' }, 404);
+		}
+
+		// Parse aliases
+		if (user && user.aliases && typeof user.aliases === 'string') {
+			try {
+				user.aliases = JSON.parse(user.aliases);
+			} catch (e) {
+				user.aliases = [];
+			}
 		}
 
 		return c.json(user);
@@ -72,9 +81,11 @@ users.put('/me', async (c) => {
 		const userId = c.get('userId');
 		const body = await c.req.json<{
 			display_name?: string;
+			aliases?: string[];
 			wallet_address?: string;
 			avatar_url?: string;
 		}>();
+
 
 		// Build dynamic update query
 		const updates: string[] = [];
@@ -83,6 +94,10 @@ users.put('/me', async (c) => {
 		if (body.display_name !== undefined) {
 			updates.push('display_name = ?');
 			values.push(body.display_name);
+		}
+		if (body.aliases !== undefined) {
+			updates.push('aliases = ?');
+			values.push(JSON.stringify(body.aliases));
 		}
 		if (body.wallet_address !== undefined) {
 			updates.push('wallet_address = ?');
@@ -107,9 +122,18 @@ users.put('/me', async (c) => {
 
 		// Fetch and return updated user
 		const user = await c.env.DB.prepare(
-			`SELECT id, email, display_name, wallet_address, avatar_url, created_at, updated_at
+			`SELECT id, email, display_name, aliases, wallet_address, avatar_url, created_at, updated_at
        FROM users WHERE id = ?`
 		).bind(userId).first<Omit<User, 'password_hash'>>();
+
+		// Parse aliases
+		if (user && user.aliases && typeof user.aliases === 'string') {
+			try {
+				user.aliases = JSON.parse(user.aliases);
+			} catch (e) {
+				user.aliases = [];
+			}
+		}
 
 		return c.json(user);
 	} catch (error) {

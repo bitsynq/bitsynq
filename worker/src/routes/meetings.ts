@@ -105,11 +105,11 @@ meetings.post('/:projectId/meetings', async (c) => {
 
 		// Get project members for matching
 		const membersResult = await c.env.DB.prepare(
-			`SELECT u.id, u.display_name, u.email
+			`SELECT u.id, u.display_name, u.email, u.aliases
        FROM project_members pm
        INNER JOIN users u ON pm.user_id = u.id
        WHERE pm.project_id = ?`
-		).bind(projectId).all<{ id: string; display_name: string; email: string }>();
+		).bind(projectId).all<{ id: string; display_name: string; email: string; aliases: string }>();
 
 		// Match participants to members
 		const matchedParticipants = matchParticipantsToMembers(
