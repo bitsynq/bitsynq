@@ -263,7 +263,7 @@
             </v-list>
           </v-card>
         </v-window-item>
-        </v-window-item>
+
 
         <!-- Distributions Tab -->
         <v-window-item value="distributions">
