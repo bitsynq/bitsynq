@@ -15,6 +15,7 @@ import {
 	getTokenBalance,
 	getTokenInfo,
 	transferTokens,
+	batchTransferTokens,
 	parseTokenAmount,
 	formatTokenAmount,
 	isValidAddress,
@@ -254,8 +255,8 @@ tokens.post('/:projectId/distribute', async (c) => {
 		let txHash: string | null = null;
 		if (body.on_chain) {
 			// Validate Ethereum configuration
-			if (!c.env.ETH_PRIVATE_KEY || !c.env.ETH_TOKEN_CONTRACT || !c.env.ETH_RPC_URL) {
-				return c.json({ error: 'Ethereum configuration not set. Please configure ETH_PRIVATE_KEY, ETH_TOKEN_CONTRACT, and ETH_RPC_URL.' }, 500);
+			if (!c.env.ETH_PRIVATE_KEY || !c.env.ETH_TOKEN_CONTRACT || !c.env.ETH_BATCH_DISTRIBUTOR || !c.env.ETH_RPC_URL) {
+				return c.json({ error: 'Ethereum configuration not set. Missing ETH_BATCH_DISTRIBUTOR or other keys.' }, 500);
 			}
 
 			// Get user wallet addresses and validate
@@ -270,10 +271,18 @@ tokens.post('/:projectId/distribute', async (c) => {
 
 			// Check all users have wallet addresses
 			const missingWallets: string[] = [];
-			for (const userId of userIds) {
-				const wallet = userWallets.get(userId);
+			const batchTransfers: Array<{ to: string; amount: bigint }> = [];
+			const tokenDecimals = 18;
+
+			for (const [userIdKey, entry] of finalDistribution) {
+				const wallet = userWallets.get(userIdKey);
 				if (!wallet || !isValidAddress(wallet)) {
-					missingWallets.push(userId);
+					missingWallets.push(userIdKey);
+				} else {
+					batchTransfers.push({
+						to: wallet,
+						amount: parseTokenAmount(entry.tokenAmount.toString(), tokenDecimals)
+					});
 				}
 			}
 
@@ -284,44 +293,25 @@ tokens.post('/:projectId/distribute', async (c) => {
 				}, 400);
 			}
 
-			// Get token decimals (standard is 18)
-			const tokenDecimals = 18;
+			// Execute Batch Transfer
+			const result = await batchTransferTokens(
+				c.env.ETH_BATCH_DISTRIBUTOR,
+				c.env.ETH_TOKEN_CONTRACT,
+				c.env.ETH_PRIVATE_KEY,
+				c.env.ETH_RPC_URL,
+				batchTransfers
+			);
 
-			// Transfer tokens to each recipient
-			const txHashes: string[] = [];
-			const errors: string[] = [];
-
-			for (const [userIdKey, entry] of finalDistribution) {
-				const recipientWallet = userWallets.get(userIdKey)!;
-				const amount = parseTokenAmount(entry.tokenAmount.toString(), tokenDecimals);
-
-				const result = await transferTokens(
-					c.env.ETH_TOKEN_CONTRACT,
-					c.env.ETH_PRIVATE_KEY,
-					c.env.ETH_RPC_URL,
-					recipientWallet,
-					amount
-				);
-
-				if (result.success && result.txHash) {
-					txHashes.push(result.txHash);
-				} else {
-					errors.push(`Failed to transfer to ${recipientWallet}: ${result.error}`);
-				}
-			}
-
-			if (errors.length > 0) {
-				console.error('Blockchain transfer errors:', errors);
+			if (!result.success || !result.txHash) {
+				console.error('Batch transfer failed:', result.error);
 				return c.json({
-					error: 'Some blockchain transfers failed',
-					details: errors,
-					successful_txs: txHashes,
+					error: 'Blockchain batch transfer failed',
+					details: result.error,
 				}, 500);
 			}
 
-			// Use first tx hash as representative (or join multiple)
-			txHash = txHashes.length === 1 ? txHashes[0] : txHashes.join(',');
-			console.log(`On-chain distribution completed: ${txHashes.length} transfers, tx: ${txHash}`);
+			txHash = result.txHash;
+			console.log(`On-chain batch distribution completed. Tx: ${txHash}`);
 		}
 
 		// Create distribution record (with tx_hash if on-chain)

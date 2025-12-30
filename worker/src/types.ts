@@ -190,6 +190,7 @@ export interface Env {
 	ETH_RPC_URL: string;
 	ETH_PRIVATE_KEY: string;
 	ETH_TOKEN_CONTRACT: string;
+	ETH_BATCH_DISTRIBUTOR: string;
 }
 
 // =============================================================================

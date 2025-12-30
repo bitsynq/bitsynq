@@ -140,38 +140,52 @@ export async function transferTokens(
 }
 
 /**
- * Batch transfer tokens to multiple recipients
- * Note: This sends individual transactions (not a batch contract call)
- * For production, consider using a batch transfer contract
+ * Batch transfer tokens using BatchDistributor contract
+ * This executes in a SINGLE transaction (Gas Optimized)
  */
 export async function batchTransferTokens(
-	contractAddress: string,
+	batchDistributorAddress: string,
+	tokenAddress: string,
 	privateKey: string,
 	rpcUrl: string,
 	transfers: BatchTransferItem[]
-): Promise<BatchTransferResult> {
-	const wallet = getAdminWallet(privateKey, rpcUrl);
-	const contract = getTokenContract(contractAddress, wallet);
+): Promise<TransferResult> {
+	try {
+		const wallet = getAdminWallet(privateKey, rpcUrl);
+		const tokenContract = getTokenContract(tokenAddress, wallet);
 
-	const txHashes: string[] = [];
-	const errors: string[] = [];
+		// batchDistributor ABI (minimal)
+		const batchAbi = [
+			'function disperseToken(address token, address[] recipients, uint256[] values)'
+		];
+		const batchContract = new ethers.Contract(batchDistributorAddress, batchAbi, wallet);
 
-	for (const transfer of transfers) {
-		try {
-			const tx = await contract.transfer(transfer.to, transfer.amount);
-			const receipt = await tx.wait();
-			txHashes.push(receipt.hash);
-		} catch (error) {
-			const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-			errors.push(`Failed to transfer to ${transfer.to}: ${errorMsg}`);
-		}
+		// Calculate total amount
+		const totalAmount = transfers.reduce((sum, item) => sum + item.amount, BigInt(0));
+		const recipients = transfers.map(t => t.to);
+		const amounts = transfers.map(t => t.amount);
+
+		// 1. Approve BatchDistributor to spend tokens
+		console.log(`Approving ${totalAmount} tokens for BatchDistributor...`);
+		const approveTx = await tokenContract.approve(batchDistributorAddress, totalAmount);
+		await approveTx.wait();
+
+		// 2. Call disperseToken
+		console.log(`Dispersing tokens to ${recipients.length} recipients...`);
+		const disperseTx = await batchContract.disperseToken(tokenAddress, recipients, amounts);
+		const receipt = await disperseTx.wait();
+
+		return {
+			success: true,
+			txHash: receipt.hash,
+		};
+	} catch (error) {
+		console.error('Batch transfer error:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : 'Unknown error',
+		};
 	}
-
-	return {
-		success: errors.length === 0,
-		txHashes,
-		errors,
-	};
 }
 
 /**
