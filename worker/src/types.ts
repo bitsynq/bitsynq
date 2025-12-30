@@ -148,6 +148,7 @@ export interface ProcessMeetingRequest {
 export interface DistributeTokensRequest {
 	milestone_name?: string;
 	total_tokens: number;
+	on_chain?: boolean; // If true, execute blockchain transfer
 }
 
 // =============================================================================
@@ -185,6 +186,10 @@ export interface Env {
 	GOOGLE_CLIENT_ID: string;
 	GOOGLE_CLIENT_SECRET: string;
 	GOOGLE_REDIRECT_URI: string;
+	// Ethereum (Sepolia testnet)
+	ETH_RPC_URL: string;
+	ETH_PRIVATE_KEY: string;
+	ETH_TOKEN_CONTRACT: string;
 }
 
 // =============================================================================

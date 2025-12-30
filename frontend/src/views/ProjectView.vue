@@ -44,6 +44,7 @@
         <v-tab value="contributions">貢獻記錄</v-tab>
         <v-tab value="meetings">會議</v-tab>
         <v-tab value="members">成員</v-tab>
+        <v-tab value="distributions">發放紀錄</v-tab>
       </v-tabs>
 
       <v-window v-model="activeTab">
@@ -262,6 +263,53 @@
             </v-list>
           </v-card>
         </v-window-item>
+        </v-window-item>
+
+        <!-- Distributions Tab -->
+        <v-window-item value="distributions">
+          <v-card>
+            <v-list v-if="distributions.length > 0">
+              <v-list-item
+                v-for="dist in distributions"
+                :key="dist.id"
+                :title="dist.milestone_name || '未命名里程碑'"
+                :subtitle="`${formatDate(dist.created_at)} · 由 ${dist.created_by_name || 'Admin'} 發放`"
+                :href="dist.tx_hash ? `https://sepolia.etherscan.io/tx/${dist.tx_hash}` : undefined"
+                :target="dist.tx_hash ? '_blank' : undefined"
+              >
+                <template #prepend>
+                  <v-avatar color="secondary" variant="tonal">
+                    <v-icon>mdi-gift</v-icon>
+                  </v-avatar>
+                </template>
+                <template #append>
+                  <div class="d-flex align-center gap-2">
+                    <v-chip color="primary" variant="flat" class="mr-2">
+                      {{ dist.total_tokens }} Tokens
+                    </v-chip>
+
+                    <v-tooltip location="top" v-if="dist.tx_hash">
+                      <template #activator="{ props }">
+                        <v-btn icon size="small" variant="text" color="primary" v-bind="props">
+                          <v-icon>mdi-link-variant</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>View on Etherscan (Sepolia)</span>
+                    </v-tooltip>
+
+                    <v-chip v-if="dist.on_chain && !dist.tx_hash" size="small" color="error" variant="outlined">
+                      On-Chain Failed
+                    </v-chip>
+                  </div>
+                </template>
+              </v-list-item>
+            </v-list>
+            <div v-else class="text-center py-12">
+              <v-icon icon="mdi-gift-off" size="48" color="grey" class="mb-2" />
+              <p class="text-body-2 text-medium-emphasis">尚無發放紀錄</p>
+            </div>
+          </v-card>
+        </v-window-item>
       </v-window>
     </template>
 
@@ -293,7 +341,7 @@
 import { ref, onMounted, inject, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { api, type Project, type Contribution, type Meeting } from '@/services/api'
+import { api, type Project, type Contribution, type Meeting, type TokenDistribution } from '@/services/api'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -303,6 +351,7 @@ const projectId = computed(() => route.params.id as string)
 const project = ref<Project | null>(null)
 const contributions = ref<Contribution[]>([])
 const meetings = ref<Meeting[]>([])
+const distributions = ref<TokenDistribution[]>([])
 const contributionSummary = ref<any[]>([])
 const grandTotal = ref(0)
 
@@ -341,12 +390,21 @@ async function loadProject() {
     await Promise.all([
       loadContributions(),
       loadMeetings(),
+      loadDistributions(),
       loadSummary(),
     ])
   } catch (e: any) {
     showSnackbar(e.message || '載入專案失敗', 'error')
   } finally {
     loading.value = false
+  }
+}
+
+async function loadDistributions() {
+  try {
+    distributions.value = await api.tokens.distributions(projectId.value)
+  } catch (e) {
+    console.error('Failed to load distributions:', e)
   }
 }
 

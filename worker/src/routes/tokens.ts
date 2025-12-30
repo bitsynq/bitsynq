@@ -10,6 +10,16 @@ import {
 	fairDistribution,
 	serializeDistribution
 } from '../services/token-calculator';
+import {
+	getAdminWallet,
+	getTokenBalance,
+	getTokenInfo,
+	transferTokens,
+	parseTokenAmount,
+	formatTokenAmount,
+	isValidAddress,
+	getEthBalance
+} from '../services/ethereum';
 
 // Extended context with user info
 type AuthContext = {
@@ -240,16 +250,91 @@ tokens.post('/:projectId/distribute', async (c) => {
 		const distributionId = generateId();
 		const now = new Date().toISOString();
 
-		// Create distribution record
+		// Handle on-chain transfer if requested
+		let txHash: string | null = null;
+		if (body.on_chain) {
+			// Validate Ethereum configuration
+			if (!c.env.ETH_PRIVATE_KEY || !c.env.ETH_TOKEN_CONTRACT || !c.env.ETH_RPC_URL) {
+				return c.json({ error: 'Ethereum configuration not set. Please configure ETH_PRIVATE_KEY, ETH_TOKEN_CONTRACT, and ETH_RPC_URL.' }, 500);
+			}
+
+			// Get user wallet addresses and validate
+			const userIds = Array.from(finalDistribution.keys());
+			const usersResult = await c.env.DB.prepare(
+				`SELECT id, wallet_address FROM users WHERE id IN (${userIds.map(() => '?').join(',')})`
+			).bind(...userIds).all<{ id: string; wallet_address: string | null }>();
+
+			const userWallets = new Map(
+				(usersResult.results || []).map(u => [u.id, u.wallet_address])
+			);
+
+			// Check all users have wallet addresses
+			const missingWallets: string[] = [];
+			for (const userId of userIds) {
+				const wallet = userWallets.get(userId);
+				if (!wallet || !isValidAddress(wallet)) {
+					missingWallets.push(userId);
+				}
+			}
+
+			if (missingWallets.length > 0) {
+				return c.json({
+					error: 'Some users do not have valid wallet addresses',
+					missing_users: missingWallets,
+				}, 400);
+			}
+
+			// Get token decimals (standard is 18)
+			const tokenDecimals = 18;
+
+			// Transfer tokens to each recipient
+			const txHashes: string[] = [];
+			const errors: string[] = [];
+
+			for (const [userIdKey, entry] of finalDistribution) {
+				const recipientWallet = userWallets.get(userIdKey)!;
+				const amount = parseTokenAmount(entry.tokenAmount.toString(), tokenDecimals);
+
+				const result = await transferTokens(
+					c.env.ETH_TOKEN_CONTRACT,
+					c.env.ETH_PRIVATE_KEY,
+					c.env.ETH_RPC_URL,
+					recipientWallet,
+					amount
+				);
+
+				if (result.success && result.txHash) {
+					txHashes.push(result.txHash);
+				} else {
+					errors.push(`Failed to transfer to ${recipientWallet}: ${result.error}`);
+				}
+			}
+
+			if (errors.length > 0) {
+				console.error('Blockchain transfer errors:', errors);
+				return c.json({
+					error: 'Some blockchain transfers failed',
+					details: errors,
+					successful_txs: txHashes,
+				}, 500);
+			}
+
+			// Use first tx hash as representative (or join multiple)
+			txHash = txHashes.length === 1 ? txHashes[0] : txHashes.join(',');
+			console.log(`On-chain distribution completed: ${txHashes.length} transfers, tx: ${txHash}`);
+		}
+
+		// Create distribution record (with tx_hash if on-chain)
 		await c.env.DB.prepare(
-			`INSERT INTO token_distributions (id, project_id, milestone_name, total_tokens, distribution_data, status, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, 'confirmed', ?, ?)`
+			`INSERT INTO token_distributions (id, project_id, milestone_name, total_tokens, distribution_data, tx_hash, status, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)`
 		).bind(
 			distributionId,
 			projectId,
 			body.milestone_name || null,
 			body.total_tokens,
 			serializeDistribution(finalDistribution),
+			txHash,
 			userId,
 			now
 		).run();
@@ -276,6 +361,8 @@ tokens.post('/:projectId/distribute', async (c) => {
 			milestone_name: body.milestone_name,
 			total_tokens: body.total_tokens,
 			distribution: distributionList,
+			tx_hash: txHash,
+			on_chain: !!body.on_chain,
 		}, 201);
 	} catch (error) {
 		console.error('Distribute tokens error:', error);
@@ -318,4 +405,44 @@ tokens.get('/:projectId/my-balance', async (c) => {
 	}
 });
 
+/**
+ * GET /api/tokens/admin-wallet
+ * Get admin wallet info (for funding with testnet ETH)
+ */
+tokens.get('/admin-wallet', async (c) => {
+	try {
+		if (!c.env.ETH_PRIVATE_KEY || !c.env.ETH_RPC_URL) {
+			return c.json({ error: 'Ethereum not configured' }, 500);
+		}
+
+		const wallet = getAdminWallet(c.env.ETH_PRIVATE_KEY, c.env.ETH_RPC_URL);
+		const ethBalance = await getEthBalance(wallet.address, c.env.ETH_RPC_URL);
+
+		let tokenBalance = '0';
+		let tokenInfo = null;
+		if (c.env.ETH_TOKEN_CONTRACT) {
+			try {
+				tokenInfo = await getTokenInfo(c.env.ETH_TOKEN_CONTRACT, c.env.ETH_RPC_URL);
+				const rawBalance = await getTokenBalance(c.env.ETH_TOKEN_CONTRACT, wallet.address, c.env.ETH_RPC_URL);
+				tokenBalance = formatTokenAmount(rawBalance, tokenInfo.decimals);
+			} catch (e) {
+				console.error('Failed to get token info:', e);
+			}
+		}
+
+		return c.json({
+			address: wallet.address,
+			eth_balance: ethBalance,
+			token_balance: tokenBalance,
+			token_info: tokenInfo,
+			network: 'sepolia',
+			faucet_url: 'https://sepoliafaucet.com',
+		});
+	} catch (error) {
+		console.error('Get admin wallet error:', error);
+		return c.json({ error: 'Internal server error' }, 500);
+	}
+});
+
 export default tokens;
+

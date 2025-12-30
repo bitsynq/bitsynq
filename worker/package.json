@@ -11,6 +11,7 @@
     "db:migrate": "wrangler d1 execute bitsynq-db --local --file=src/db/schema.sql"
   },
   "dependencies": {
+    "ethers": "^6.16.0",
     "hono": "^4.0.0",
     "uuid": "^9.0.0"
   },

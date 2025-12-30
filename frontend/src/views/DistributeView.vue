@@ -30,6 +30,24 @@
               class="mb-4"
             />
 
+            <v-checkbox
+              v-model="onChain"
+              label="執行區塊鏈轉帳 (Sepolia Testnet)"
+              color="primary"
+              hide-details
+              class="mb-2"
+            />
+
+            <v-alert
+              v-if="onChain"
+              type="info"
+              variant="tonal"
+              border="start"
+              class="mb-4 text-caption"
+            >
+              系統將會從專案錢包發送 ERC-20 Token 至成員的錢包地址。請確保專案錢包有足夠的 ETH (Gas) 和 Token。
+            </v-alert>
+
             <v-btn
               type="submit"
               color="secondary"
@@ -52,11 +70,28 @@
               :key="dist.id"
               :title="dist.milestone_name || '未命名'"
               :subtitle="`${formatDate(dist.created_at)} · ${dist.total_tokens} tokens`"
+              :href="dist.tx_hash ? `https://sepolia.etherscan.io/tx/${dist.tx_hash}` : undefined"
+              :target="dist.tx_hash ? '_blank' : undefined"
             >
               <template #prepend>
-                <v-avatar color="success" variant="tonal" size="32">
-                  <v-icon size="small">mdi-check</v-icon>
-                </v-avatar>
+                <div class="mr-4">
+                  <v-avatar color="success" variant="tonal" size="32" v-if="dist.status === 'confirmed'">
+                    <v-icon size="small">mdi-check</v-icon>
+                  </v-avatar>
+                  <v-avatar color="warning" variant="tonal" size="32" v-else>
+                    <v-icon size="small">mdi-clock</v-icon>
+                  </v-avatar>
+                </div>
+              </template>
+
+              <template #append>
+                <v-tooltip location="top" v-if="dist.tx_hash">
+                  <template #activator="{ props }">
+                    <v-icon v-bind="props" color="primary" size="small">mdi-link-variant</v-icon>
+                  </template>
+                  <span>View on Etherscan (Sepolia)</span>
+                </v-tooltip>
+                <v-chip v-else-if="dist.on_chain" size="x-small" color="error" variant="outlined">Failed</v-chip>
               </template>
             </v-list-item>
           </v-list>
@@ -147,6 +182,7 @@ const projectId = computed(() => route.params.id as string)
 
 const milestoneName = ref('')
 const totalTokens = ref(1000)
+const onChain = ref(false)
 const previewing = ref(false)
 const distributing = ref(false)
 
@@ -193,6 +229,7 @@ async function handleDistribute() {
     await api.tokens.distribute(projectId.value, {
       milestone_name: milestoneName.value || undefined,
       total_tokens: totalTokens.value,
+      on_chain: onChain.value,
     })
     showSnackbar('Token 發放成功！', 'success')
     router.push(`/projects/${projectId.value}`)

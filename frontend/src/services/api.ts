@@ -101,6 +101,8 @@ export interface TokenDistribution {
 	created_by: string
 	created_at: string
 	created_by_name?: string
+	tx_hash?: string | null
+	on_chain?: boolean
 }
 
 export interface DistributionEntry {
@@ -339,8 +341,8 @@ class ApiClient {
 
 		distribute: (
 			projectId: string,
-			data: { milestone_name?: string; total_tokens: number }
-		): Promise<{ id: string; message: string; total_tokens: number }> =>
+			data: { milestone_name?: string; total_tokens: number; on_chain?: boolean }
+		): Promise<{ id: string; message: string; total_tokens: number; tx_hash?: string }> =>
 			this.request('POST', `/projects/${projectId}/distribute`, data),
 	}
 }
