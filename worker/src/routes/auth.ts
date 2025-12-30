@@ -5,6 +5,8 @@
 import { Hono } from 'hono';
 import type { Env, RegisterRequest, LoginRequest, AuthResponse, User } from '../types';
 import { createToken, hashPassword, verifyPassword, generateId } from '../middleware/auth';
+import { generateWallet } from '../services/ethereum';
+import { encrypt } from '../services/encryption';
 
 const auth = new Hono<{ Bindings: Env }>();
 
@@ -46,14 +48,28 @@ auth.post('/register', async (c) => {
 		const passwordHash = await hashPassword(body.password);
 		const now = new Date().toISOString();
 
+		// Generate Wallet (Custodial)
+		let walletAddress: string | null = null;
+		let encryptedPrivateKey: string | null = null;
+
+		if (c.env.ENCRYPTION_SECRET) {
+			const wallet = generateWallet();
+			walletAddress = wallet.address;
+			encryptedPrivateKey = await encrypt(wallet.privateKey, c.env.ENCRYPTION_SECRET);
+		} else {
+			console.warn('ENCRYPTION_SECRET not set. Skipping wallet generation.');
+		}
+
 		await c.env.DB.prepare(
-			`INSERT INTO users (id, email, password_hash, display_name, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
+			`INSERT INTO users (id, email, password_hash, display_name, wallet_address, encrypted_private_key, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 		).bind(
 			userId,
 			body.email.toLowerCase(),
 			passwordHash,
 			body.display_name,
+			walletAddress,
+			encryptedPrivateKey,
 			now,
 			now
 		).run();
@@ -64,14 +80,14 @@ auth.post('/register', async (c) => {
 			c.env.JWT_SECRET
 		);
 
-		// Return user data (without password_hash)
+		// Return user data (without password_hash or private key)
 		const response: AuthResponse = {
 			token,
 			user: {
 				id: userId,
 				email: body.email.toLowerCase(),
 				display_name: body.display_name,
-				wallet_address: null,
+				wallet_address: walletAddress,
 				avatar_url: null,
 				created_at: now,
 				updated_at: now,

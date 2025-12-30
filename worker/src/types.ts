@@ -14,6 +14,8 @@ export interface User {
 	display_name: string;
 	aliases?: string[]; // Parsed from JSON
 	wallet_address: string | null;
+	has_custodial_wallet?: boolean; // Derived field
+	encrypted_private_key?: string | null; // Encrypted private key (server-side only)
 	avatar_url: string | null;
 	created_at: string;
 	updated_at: string;
@@ -191,6 +193,8 @@ export interface Env {
 	ETH_PRIVATE_KEY: string;
 	ETH_TOKEN_CONTRACT: string;
 	ETH_BATCH_DISTRIBUTOR: string;
+	// Security
+	ENCRYPTION_SECRET: string;
 }
 
 // =============================================================================

@@ -5,6 +5,8 @@
 import { Hono } from 'hono';
 import type { Env, User } from '../types';
 import { verifyToken } from '../middleware/auth';
+import { generateWallet } from '../services/ethereum';
+import { encrypt, decrypt } from '../services/encryption';
 
 // Extended context with user info
 type AuthContext = {
@@ -65,7 +67,15 @@ users.get('/me', async (c) => {
 			}
 		}
 
-		return c.json(user);
+		// Check for custodial wallet (without returning key)
+		const userWithKey = await c.env.DB.prepare(
+			'SELECT encrypted_private_key FROM users WHERE id = ?'
+		).bind(userId).first<{ encrypted_private_key: string | null }>();
+
+		return c.json({
+			...user,
+			has_custodial_wallet: !!userWithKey?.encrypted_private_key
+		});
 	} catch (error) {
 		console.error('Get user error:', error);
 		return c.json({ error: 'Internal server error' }, 500);
@@ -135,9 +145,94 @@ users.put('/me', async (c) => {
 			}
 		}
 
-		return c.json(user);
+		// Check if user has custodial wallet
+		const userWithKey = await c.env.DB.prepare(
+			'SELECT encrypted_private_key FROM users WHERE id = ?'
+		).bind(userId).first<{ encrypted_private_key: string | null }>();
+
+		return c.json({
+			...user,
+			has_custodial_wallet: !!userWithKey?.encrypted_private_key
+		});
 	} catch (error) {
 		console.error('Update user error:', error);
+		return c.json({ error: 'Internal server error' }, 500);
+	}
+});
+
+/**
+ * POST /api/users/me/wallet/generate
+ * Generate a custodial wallet for the current user
+ */
+users.post('/me/wallet/generate', async (c) => {
+	try {
+		const userId = c.get('userId');
+
+		// Check if user already has a wallet
+		const user = await c.env.DB.prepare(
+			'SELECT wallet_address, encrypted_private_key FROM users WHERE id = ?'
+		).bind(userId).first<{ wallet_address: string | null; encrypted_private_key: string | null }>();
+
+		if (user?.encrypted_private_key) {
+			return c.json({ error: 'User already has a custodial wallet' }, 400);
+		}
+
+		if (!c.env.ENCRYPTION_SECRET) {
+			return c.json({ error: 'Server encryption not configured' }, 500);
+		}
+
+		// Generate new wallet
+		const wallet = generateWallet();
+		const encryptedPrivateKey = await encrypt(wallet.privateKey, c.env.ENCRYPTION_SECRET);
+
+		// Update user
+		await c.env.DB.prepare(
+			`UPDATE users
+			 SET wallet_address = ?, encrypted_private_key = ?, updated_at = ?
+			 WHERE id = ?`
+		).bind(
+			wallet.address,
+			encryptedPrivateKey,
+			new Date().toISOString(),
+			userId
+		).run();
+
+		return c.json({
+			wallet_address: wallet.address,
+			has_custodial_wallet: true
+		});
+	} catch (error) {
+		console.error('Generate wallet error:', error);
+		return c.json({ error: 'Internal server error' }, 500);
+	}
+});
+
+/**
+ * GET /api/users/me/wallet/private-key
+ * Get decrypted private key (High Security)
+ */
+users.get('/me/wallet/private-key', async (c) => {
+	try {
+		const userId = c.get('userId');
+
+		const user = await c.env.DB.prepare(
+			'SELECT encrypted_private_key FROM users WHERE id = ?'
+		).bind(userId).first<{ encrypted_private_key: string | null }>();
+
+		if (!user || !user.encrypted_private_key) {
+			return c.json({ error: 'No custodial wallet found' }, 404);
+		}
+
+		if (!c.env.ENCRYPTION_SECRET) {
+			return c.json({ error: 'Server encryption not configured' }, 500);
+		}
+
+		// Decrypt private key
+		const privateKey = await decrypt(user.encrypted_private_key, c.env.ENCRYPTION_SECRET);
+
+		return c.json({ private_key: privateKey });
+	} catch (error) {
+		console.error('Export private key error:', error);
 		return c.json({ error: 'Internal server error' }, 500);
 	}
 });

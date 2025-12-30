@@ -47,13 +47,48 @@
               class="mb-6"
             />
 
-            <v-text-field
-              v-model="user.wallet_address"
-              label="錢包地址 (ERC-20)"
-              prepend-icon="mdi-wallet"
-              placeholder="0x..."
-              class="mb-6"
-            />
+            <div class="d-flex align-center mb-6">
+              <v-text-field
+                v-model="user.wallet_address"
+                label="錢包地址 (ERC-20)"
+                prepend-icon="mdi-wallet"
+                placeholder="0x..."
+                hide-details
+                :readonly="!!user.has_custodial_wallet"
+                class="flex-grow-1"
+              >
+                <template #append-inner v-if="user.has_custodial_wallet">
+                  <v-chip color="primary" size="small" variant="flat" label class="mr-2">
+                    託管錢包
+                  </v-chip>
+                </template>
+              </v-text-field>
+
+              <div class="ml-4 d-flex flex-column gap-2" style="width: 160px">
+                <v-btn
+                  v-if="!user.wallet_address"
+                  color="secondary"
+                  variant="tonal"
+                  block
+                  :loading="generatingWallet"
+                  @click="generateWallet"
+                >
+                  <v-icon start>mdi-plus</v-icon>
+                  建立錢包
+                </v-btn>
+
+                <v-btn
+                  v-if="user.has_custodial_wallet"
+                  color="warning"
+                  variant="text"
+                  size="small"
+                  block
+                  @click="showPrivateKeyDialog = true"
+                >
+                  匯出私鑰
+                </v-btn>
+              </div>
+            </div>
 
             <div class="d-flex justify-end gap-2">
               <v-btn
@@ -70,6 +105,30 @@
       </v-col>
     </v-row>
   </v-container>
+
+  <!-- Private Key Dialog -->
+  <v-dialog v-model="showPrivateKeyDialog" max-width="500">
+    <v-card>
+      <v-card-title>匯出私鑰</v-card-title>
+      <v-card-text>
+        <v-alert type="warning" variant="tonal" class="mb-4">
+          請勿將私鑰透露給任何人。擁有私鑰的人可以完全控制這個錢包的資產。
+        </v-alert>
+
+        <div v-if="revealedPrivateKey" class="bg-grey-lighten-4 pa-4 rounded text-center font-weight-bold text-mono mb-4 text-break">
+          {{ revealedPrivateKey }}
+        </div>
+
+        <v-btn v-else color="error" variant="outlined" block @click="revealPrivateKey" :loading="revealingKey">
+          顯示私鑰
+        </v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn color="primary" variant="text" @click="showPrivateKeyDialog = false">關閉</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -80,12 +139,18 @@ const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar
 
 const loading = ref(true)
 const saving = ref(false)
+const generatingWallet = ref(false)
+const showPrivateKeyDialog = ref(false)
+const revealingKey = ref(false)
+const revealedPrivateKey = ref<string | null>(null)
+
 const user = ref<Partial<User>>({
   email: '',
   display_name: '',
   aliases: [],
   wallet_address: '',
   avatar_url: '',
+  has_custodial_wallet: false,
 })
 
 async function loadProfile() {
@@ -106,17 +171,44 @@ async function loadProfile() {
 async function saveProfile() {
   saving.value = true
   try {
-    await api.users.update({
+    const updatedUser = await api.users.update({
       display_name: user.value.display_name,
       aliases: user.value.aliases,
       wallet_address: user.value.wallet_address || undefined,
       avatar_url: user.value.avatar_url || undefined,
     })
+    user.value = { ...user.value, ...updatedUser } // Update local state
     showSnackbar('個人檔案已更新', 'success')
   } catch (e: any) {
     showSnackbar(e.message || '儲存失敗', 'error')
   } finally {
     saving.value = false
+  }
+}
+
+async function generateWallet() {
+  generatingWallet.value = true
+  try {
+    const result = await api.users.generateWallet()
+    user.value.wallet_address = result.wallet_address
+    user.value.has_custodial_wallet = result.has_custodial_wallet
+    showSnackbar('錢包建立成功！', 'success')
+  } catch (e: any) {
+    showSnackbar(e.message || '建立錢包失敗', 'error')
+  } finally {
+    generatingWallet.value = false
+  }
+}
+
+async function revealPrivateKey() {
+  revealingKey.value = true
+  try {
+    const result = await api.users.getPrivateKey()
+    revealedPrivateKey.value = result.private_key
+  } catch (e: any) {
+    showSnackbar(e.message || '取得私鑰失敗', 'error')
+  } finally {
+    revealingKey.value = false
   }
 }
 

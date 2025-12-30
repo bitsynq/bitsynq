@@ -13,6 +13,7 @@ export interface User {
 	display_name: string
 	aliases?: string[]
 	wallet_address: string | null
+	has_custodial_wallet?: boolean
 	avatar_url: string | null
 	created_at: string
 	updated_at: string
@@ -199,6 +200,12 @@ class ApiClient {
 
 		search: (email: string): Promise<User[]> =>
 			this.request('GET', `/users/search?email=${encodeURIComponent(email)}`),
+
+		generateWallet: (): Promise<{ wallet_address: string; has_custodial_wallet: boolean }> =>
+			this.request('POST', '/users/me/wallet/generate'),
+
+		getPrivateKey: (): Promise<{ private_key: string }> =>
+			this.request('GET', '/users/me/wallet/private-key'),
 	}
 
 	// Project endpoints
