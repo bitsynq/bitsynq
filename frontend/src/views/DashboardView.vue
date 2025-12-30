@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-space-between align-center mb-8">
       <div>
-        <h1 class="text-h4 font-weight-bold mb-1">儀表板</h1>
+        <h1 class="text-h4 font-weight-bold mb-1">{{ $t('dashboard.title') }}</h1>
         <p class="text-body-2 text-medium-emphasis">
-          管理你的專案和貢獻記錄
+          {{ $t('dashboard.subtitle') }}
         </p>
       </div>
       <v-btn
@@ -13,7 +13,7 @@
         prepend-icon="mdi-plus"
         @click="showCreateDialog = true"
       >
-        建立專案
+        {{ $t('dashboard.createProject') }}
       </v-btn>
     </div>
 
@@ -25,12 +25,12 @@
     <!-- Empty State -->
     <v-card v-else-if="projects.length === 0" class="pa-12 text-center" variant="tonal">
       <v-icon icon="mdi-folder-open-outline" size="64" color="primary" class="mb-4" />
-      <h3 class="text-h6 mb-2">還沒有專案</h3>
+      <h3 class="text-h6 mb-2">{{ $t('dashboard.noProjects') }}</h3>
       <p class="text-body-2 text-medium-emphasis mb-4">
-        建立你的第一個專案開始追蹤貢獻
+        {{ $t('dashboard.startTracking') }}
       </p>
       <v-btn color="primary" @click="showCreateDialog = true">
-        建立專案
+        {{ $t('dashboard.createProject') }}
       </v-btn>
     </v-card>
 
@@ -54,7 +54,7 @@
                 :color="project.member_role === 'admin' ? 'primary' : 'default'"
                 class="mr-2"
               >
-                {{ project.member_role === 'admin' ? '管理員' : '成員' }}
+                {{ project.member_role === 'admin' ? $t('dashboard.roleAdmin') : $t('dashboard.roleMember') }}
               </v-chip>
               <span v-if="project.token_symbol">
                 {{ project.token_symbol }}
@@ -79,38 +79,38 @@
     <!-- Create Project Dialog -->
     <v-dialog v-model="showCreateDialog" max-width="500">
       <v-card class="pa-4">
-        <v-card-title>建立新專案</v-card-title>
+        <v-card-title>{{ $t('dashboard.dialog.title') }}</v-card-title>
         <v-card-text>
           <v-form ref="createFormRef" @submit.prevent="handleCreateProject">
             <v-text-field
               v-model="newProject.name"
-              label="專案名稱"
+              :label="$t('dashboard.dialog.projectName')"
               :rules="[rules.required]"
               class="mb-2"
             />
             <v-textarea
               v-model="newProject.description"
-              label="專案描述"
+              :label="$t('dashboard.dialog.description')"
               rows="3"
               class="mb-2"
             />
             <v-text-field
               v-model="newProject.token_symbol"
-              label="Token 符號"
+              :label="$t('dashboard.dialog.tokenSymbol')"
               placeholder="例如: BTC"
-              hint="選填，用於顯示 Token 獎勵"
+              :hint="$t('dashboard.dialog.tokenHint')"
             />
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="showCreateDialog = false">取消</v-btn>
+          <v-btn variant="text" @click="showCreateDialog = false">{{ $t('common.cancel') }}</v-btn>
           <v-btn
             color="primary"
             :loading="creating"
             @click="handleCreateProject"
           >
-            建立
+            {{ $t('common.confirm') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -121,7 +121,9 @@
 <script setup lang="ts">
 import { ref, onMounted, inject, reactive } from 'vue'
 import { api, type Project } from '@/services/api'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar')!
 
 const projects = ref<Project[]>([])
@@ -137,7 +139,7 @@ const newProject = reactive({
 })
 
 const rules = {
-  required: (v: string) => !!v || '此欄位為必填',
+  required: (v: string) => !!v || t('auth.rules.required'),
 }
 
 async function loadProjects() {
@@ -164,14 +166,14 @@ async function handleCreateProject() {
     })
     projects.value.unshift(project)
     showCreateDialog.value = false
-    showSnackbar('專案建立成功！', 'success')
+    showSnackbar(t('dashboard.successCreate'), 'success')
 
     // Reset form
     newProject.name = ''
     newProject.description = ''
     newProject.token_symbol = ''
   } catch (e: any) {
-    showSnackbar(e.message || '建立專案失敗', 'error')
+    showSnackbar(e.message || t('dashboard.errorCreate'), 'error')
   } finally {
     creating.value = false
   }

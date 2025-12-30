@@ -5,34 +5,34 @@
       <v-btn icon size="small" variant="text" @click="$router.back()">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
-      <h1 class="text-h4 font-weight-bold">發放 Token</h1>
+      <h1 class="text-h4 font-weight-bold">{{ $t('distribute.title') }}</h1>
     </div>
 
     <v-row>
       <v-col cols="12" lg="5">
         <v-card class="pa-6">
-          <h3 class="text-h6 mb-4">設定發放參數</h3>
+          <h3 class="text-h6 mb-4">{{ $t('distribute.configTitle') }}</h3>
 
           <v-form @submit.prevent="handlePreview">
             <v-text-field
               v-model="milestoneName"
-              label="里程碑名稱"
-              placeholder="例如: Phase 1 Complete"
+              :label="$t('distribute.milestoneName')"
+              :placeholder="$t('distribute.milestonePlaceholder')"
               class="mb-4"
             />
 
             <v-text-field
               v-model.number="totalTokens"
-              label="發放 Token 數量"
+              :label="$t('distribute.totalTokens')"
               type="number"
               min="1"
-              :rules="[v => v > 0 || '請輸入正整數']"
+              :rules="[v => v > 0 || $t('distribute.validate.positiveInteger')]"
               class="mb-4"
             />
 
             <v-checkbox
               v-model="onChain"
-              label="執行區塊鏈轉帳 (Sepolia Testnet)"
+              :label="$t('distribute.onChain')"
               color="primary"
               hide-details
               class="mb-2"
@@ -45,7 +45,7 @@
               border="start"
               class="mb-4 text-caption"
             >
-              系統將會從專案錢包發送 ERC-20 Token 至成員的錢包地址。請確保專案錢包有足夠的 ETH (Gas) 和 Token。
+              {{ $t('distribute.onChainAlert') }}
             </v-alert>
 
             <v-btn
@@ -56,19 +56,19 @@
               :loading="previewing"
               :disabled="!totalTokens || totalTokens <= 0"
             >
-              預覽分配
+              {{ $t('distribute.previewButton') }}
             </v-btn>
           </v-form>
         </v-card>
 
         <!-- Distribution History -->
         <v-card class="pa-6 mt-4">
-          <h3 class="text-h6 mb-4">發放歷史</h3>
+          <h3 class="text-h6 mb-4">{{ $t('distribute.historyTitle') }}</h3>
           <v-list v-if="distributions.length > 0" density="compact">
             <v-list-item
               v-for="dist in distributions"
               :key="dist.id"
-              :title="dist.milestone_name || '未命名'"
+              :title="dist.milestone_name || $t('project.distributions.untitled')"
               :subtitle="`${formatDate(dist.created_at)} · ${dist.total_tokens} tokens`"
               :href="dist.tx_hash ? `https://sepolia.etherscan.io/tx/${dist.tx_hash}` : undefined"
               :target="dist.tx_hash ? '_blank' : undefined"
@@ -96,7 +96,7 @@
             </v-list-item>
           </v-list>
           <p v-else class="text-body-2 text-medium-emphasis text-center py-4">
-            尚無發放記錄
+            {{ $t('project.distributions.noDistributions') }}
           </p>
         </v-card>
       </v-col>
@@ -104,15 +104,15 @@
       <v-col cols="12" lg="7">
         <!-- Preview Results -->
         <v-card v-if="preview" class="pa-6">
-          <h3 class="text-h6 mb-4">分配預覽</h3>
+          <h3 class="text-h6 mb-4">{{ $t('distribute.previewTitle') }}</h3>
 
           <v-table class="mb-4">
             <thead>
               <tr>
-                <th>成員</th>
-                <th class="text-right">貢獻比例</th>
-                <th class="text-right">分配比例</th>
-                <th class="text-right">Token 數量</th>
+                <th>{{ $t('distribute.columns.member') }}</th>
+                <th class="text-right">{{ $t('distribute.columns.contribRatio') }}</th>
+                <th class="text-right">{{ $t('distribute.columns.distRatio') }}</th>
+                <th class="text-right">{{ $t('distribute.columns.amount') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -132,7 +132,7 @@
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="3" class="text-right font-weight-bold">總計</td>
+                <td colspan="3" class="text-right font-weight-bold">{{ $t('distribute.total') }}</td>
                 <td class="text-right font-weight-bold text-primary">
                   {{ preview.total_tokens }}
                 </td>
@@ -141,7 +141,7 @@
           </v-table>
 
           <v-alert type="info" variant="tonal" class="mb-4">
-            Token 會根據每位成員的累計貢獻比例自動計算分配。
+            {{ $t('distribute.autoCalcAlert') }}
           </v-alert>
 
           <v-btn
@@ -152,16 +152,16 @@
             @click="handleDistribute"
           >
             <v-icon class="mr-2">mdi-coin</v-icon>
-            確認發放
+            {{ $t('distribute.confirmButton') }}
           </v-btn>
         </v-card>
 
         <!-- Empty State -->
         <v-card v-else class="pa-6 text-center" variant="tonal">
           <v-icon icon="mdi-chart-donut" size="64" color="primary" class="mb-4" />
-          <h3 class="text-h6 mb-2">輸入發放參數</h3>
+          <h3 class="text-h6 mb-2">{{ $t('distribute.emptyState.title') }}</h3>
           <p class="text-body-2 text-medium-emphasis">
-            設定 Token 數量後點擊「預覽分配」查看分配結果
+            {{ $t('distribute.emptyState.desc') }}
           </p>
         </v-card>
       </v-col>
@@ -173,7 +173,9 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api, type DistributionPreview, type TokenDistribution } from '@/services/api'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar')!
@@ -190,11 +192,7 @@ const preview = ref<DistributionPreview | null>(null)
 const distributions = ref<TokenDistribution[]>([])
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+  return new Date(dateStr).toLocaleDateString()
 }
 
 async function loadDistributions() {
@@ -215,7 +213,7 @@ async function handlePreview() {
       total_tokens: totalTokens.value,
     })
   } catch (e: any) {
-    showSnackbar(e.message || '預覽失敗', 'error')
+    showSnackbar(e.message || t('distribute.errorPreview'), 'error')
   } finally {
     previewing.value = false
   }
@@ -231,10 +229,10 @@ async function handleDistribute() {
       total_tokens: totalTokens.value,
       on_chain: onChain.value,
     })
-    showSnackbar('Token 發放成功！', 'success')
+    showSnackbar(t('distribute.success'), 'success')
     router.push(`/projects/${projectId.value}`)
   } catch (e: any) {
-    showSnackbar(e.message || '發放失敗', 'error')
+    showSnackbar(e.message || t('distribute.errorDistribute'), 'error')
   } finally {
     distributing.value = false
   }

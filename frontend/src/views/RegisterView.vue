@@ -4,16 +4,16 @@
       <v-col cols="12" sm="8" md="5" lg="4">
         <v-card class="pa-8">
           <div class="text-center mb-6">
-            <h1 class="text-h4 font-weight-bold text-gradient mb-2">註冊</h1>
+            <h1 class="text-h4 font-weight-bold text-gradient mb-2">{{ $t('auth.registerTitle') }}</h1>
             <p class="text-body-2 text-medium-emphasis">
-              建立帳號開始追蹤貢獻
+              {{ $t('auth.registerSubtitle') }}
             </p>
           </div>
 
           <v-form ref="formRef" @submit.prevent="handleRegister">
             <v-text-field
               v-model="displayName"
-              label="顯示名稱"
+              :label="$t('auth.displayName')"
               prepend-inner-icon="mdi-account"
               :rules="[rules.required, rules.minLength(2)]"
               :disabled="loading"
@@ -22,7 +22,7 @@
 
             <v-text-field
               v-model="email"
-              label="Email"
+              :label="$t('common.email')"
               type="email"
               prepend-inner-icon="mdi-email"
               :rules="[rules.required, rules.email]"
@@ -32,20 +32,20 @@
 
             <v-text-field
               v-model="password"
-              label="密碼"
+              :label="$t('common.password')"
               :type="showPassword ? 'text' : 'password'"
               prepend-inner-icon="mdi-lock"
               :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
               @click:append-inner="showPassword = !showPassword"
               :rules="[rules.required, rules.minLength(8)]"
               :disabled="loading"
-              hint="至少 8 個字元"
+              :hint="$t('auth.passwordHint')"
               class="mb-2"
             />
 
             <v-text-field
               v-model="confirmPassword"
-              label="確認密碼"
+              :label="$t('auth.confirmPassword')"
               :type="showPassword ? 'text' : 'password'"
               prepend-inner-icon="mdi-lock-check"
               :rules="[rules.required, rules.match]"
@@ -71,14 +71,14 @@
               block
               :loading="loading"
             >
-              註冊
+              {{ $t('common.register') }}
             </v-btn>
           </v-form>
 
           <div class="text-center mt-6">
-            <span class="text-medium-emphasis">已經有帳號？</span>
+            <span class="text-medium-emphasis">{{ $t('auth.alreadyHaveAccount') }}</span>
             <router-link to="/login" class="text-primary text-decoration-none ml-1">
-              立即登入
+              {{ $t('auth.loginLink') }}
             </router-link>
           </div>
         </v-card>
@@ -91,7 +91,9 @@
 import { ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar')!
@@ -106,11 +108,11 @@ const loading = ref(false)
 const error = ref('')
 
 const rules = {
-  required: (v: string) => !!v || '此欄位為必填',
-  email: (v: string) => /.+@.+\..+/.test(v) || 'Email 格式不正確',
+  required: (v: string) => !!v || t('auth.rules.required'),
+  email: (v: string) => /.+@.+\..+/.test(v) || t('auth.rules.email'),
   minLength: (min: number) => (v: string) =>
-    v.length >= min || `至少需要 ${min} 個字元`,
-  match: (v: string) => v === password.value || '密碼不一致',
+    v.length >= min || t('auth.rules.minLength', { min }),
+  match: (v: string) => v === password.value || t('auth.rules.match'),
 }
 
 async function handleRegister() {
@@ -122,7 +124,7 @@ async function handleRegister() {
 
   try {
     await authStore.register(email.value, password.value, displayName.value)
-    showSnackbar('註冊成功！', 'success')
+    showSnackbar(t('auth.successRegister'), 'success')
     router.push('/dashboard')
   } catch (e: any) {
     error.value = e.message || '註冊失敗，請稍後再試'

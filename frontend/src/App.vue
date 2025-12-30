@@ -22,11 +22,15 @@
         {{ authStore.currentUser.display_name }}
       </v-btn>
 
-      <v-btn icon @click="toggleTheme">
+      <v-btn icon @click="toggleTheme" :title="$t('nav.theme')">
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
 
-      <v-btn icon @click="handleLogout">
+      <v-btn icon @click="toggleLanguage" :title="$t('nav.language')">
+        <v-icon>mdi-translate</v-icon>
+      </v-btn>
+
+      <v-btn icon @click="handleLogout" :title="$t('nav.logout')">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
     </v-app-bar>
@@ -41,8 +45,13 @@
       <v-list>
         <v-list-item
           prepend-icon="mdi-view-dashboard"
-          title="Dashboard"
+          :title="$t('nav.dashboard')"
           to="/dashboard"
+        />
+        <v-list-item
+          prepend-icon="mdi-account"
+          :title="$t('nav.profile')"
+          to="/profile"
         />
       </v-list>
     </v-navigation-drawer>
@@ -73,10 +82,12 @@ import { ref, provide, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const theme = useTheme()
 const authStore = useAuthStore()
+const { t, locale } = useI18n()
 
 const drawer = ref(false)
 const isDark = ref(theme.global.current.value.dark)
@@ -102,10 +113,15 @@ function toggleTheme() {
   isDark.value = !isDark.value
 }
 
+function toggleLanguage() {
+  locale.value = locale.value === 'zh-TW' ? 'en' : 'zh-TW'
+  localStorage.setItem('user-locale', locale.value)
+}
+
 async function handleLogout() {
   await authStore.logout()
   router.push('/login')
-  showSnackbar('已登出', 'info')
+  showSnackbar(t('nav.loggedOut'), 'info')
 }
 </script>
 

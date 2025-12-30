@@ -4,9 +4,9 @@
       <v-col cols="12" sm="8" md="5" lg="4">
         <v-card class="pa-8">
           <div class="text-center mb-6">
-            <h1 class="text-h4 font-weight-bold text-gradient mb-2">登入</h1>
+            <h1 class="text-h4 font-weight-bold text-gradient mb-2">{{ $t('auth.loginTitle') }}</h1>
             <p class="text-body-2 text-medium-emphasis">
-              歡迎回來！請選擇登入方式
+              {{ $t('auth.loginSubtitle') }}
             </p>
           </div>
 
@@ -20,17 +20,17 @@
             @click="handleGoogleLogin"
           >
             <v-icon class="mr-2" color="red">mdi-google</v-icon>
-            使用 Google 登入
+            {{ $t('auth.googleLogin') }}
           </v-btn>
 
           <v-divider class="my-6">
-            <span class="text-body-2 text-medium-emphasis px-4">或使用 Email</span>
+            <span class="text-body-2 text-medium-emphasis px-4">{{ $t('auth.orEmail') }}</span>
           </v-divider>
 
           <v-form ref="formRef" @submit.prevent="handleLogin">
             <v-text-field
               v-model="email"
-              label="Email"
+              :label="$t('common.email')"
               type="email"
               prepend-inner-icon="mdi-email"
               :rules="[rules.required, rules.email]"
@@ -40,7 +40,7 @@
 
             <v-text-field
               v-model="password"
-              label="密碼"
+              :label="$t('common.password')"
               :type="showPassword ? 'text' : 'password'"
               prepend-inner-icon="mdi-lock"
               :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
@@ -68,14 +68,14 @@
               block
               :loading="loading"
             >
-              登入
+              {{ $t('common.login') }}
             </v-btn>
           </v-form>
 
           <div class="text-center mt-6">
-            <span class="text-medium-emphasis">還沒有帳號？</span>
+            <span class="text-medium-emphasis">{{ $t('auth.noAccount') }}</span>
             <router-link to="/register" class="text-primary text-decoration-none ml-1">
-              立即註冊
+              {{ $t('auth.registerLink') }}
             </router-link>
           </div>
         </v-card>
@@ -89,7 +89,9 @@ import { ref, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/services/api'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
@@ -104,8 +106,8 @@ const googleLoading = ref(false)
 const error = ref('')
 
 const rules = {
-  required: (v: string) => !!v || '此欄位為必填',
-  email: (v: string) => /.+@.+\..+/.test(v) || 'Email 格式不正確',
+  required: (v: string) => !!v || t('auth.rules.required'),
+  email: (v: string) => /.+@.+\..+/.test(v) || t('auth.rules.email'),
 }
 
 async function handleLogin() {
@@ -117,13 +119,13 @@ async function handleLogin() {
 
   try {
     await authStore.login(email.value, password.value)
-    showSnackbar('登入成功！', 'success')
+    showSnackbar(t('auth.successLogin'), 'success')
 
     // Redirect to intended page or dashboard
     const redirect = route.query.redirect as string
     router.push(redirect || '/dashboard')
   } catch (e: any) {
-    error.value = e.message || '登入失敗，請檢查帳號密碼'
+    error.value = e.message || '登入失敗，請檢查帳號密碼' // Wait, e.message might be from backend
   } finally {
     loading.value = false
   }

@@ -5,41 +5,31 @@
       <v-btn icon size="small" variant="text" @click="$router.back()">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
-      <h1 class="text-h4 font-weight-bold">上傳會議紀錄</h1>
+      <h1 class="text-h4 font-weight-bold">{{ $t('meeting.title') }}</h1>
     </div>
 
     <v-row>
       <v-col cols="12" lg="7">
         <v-card class="pa-6">
-          <h3 class="text-h6 mb-4">貼上 Zoom 會議摘要</h3>
+          <h3 class="text-h6 mb-4">{{ $t('meeting.subtitle') }}</h3>
           <p class="text-body-2 text-medium-emphasis mb-4">
-            將 Zoom AI 生成的會議摘要（Meeting Summary）貼上，系統會自動解析參與者和貢獻。
+            {{ $t('meeting.desc') }}
           </p>
 
           <v-form @submit.prevent="handleParse">
             <v-text-field
               v-model="title"
-              label="會議標題"
-              placeholder="選填，系統會嘗試從摘要中解析"
+              :label="$t('meeting.fields.title')"
+              :placeholder="$t('meeting.fields.titlePlaceholder')"
               class="mb-4"
             />
 
             <v-textarea
               v-model="transcript"
-              label="會議摘要內容"
-              placeholder="Meeting summary
-
-Quick recap
-...
-
-Next steps
-和融: Complete the token sender design...
-胡舜元: Get Mohammad's contact info...
-
-Summary
-..."
+              :label="$t('meeting.fields.transcript')"
+              :placeholder="$t('meeting.fields.transcriptPlaceholder')"
               rows="12"
-              :rules="[v => !!v || '請輸入會議內容']"
+              :rules="[v => !!v || $t('meeting.fields.validate')]"
               class="mb-4"
             />
 
@@ -50,7 +40,7 @@ Summary
               :loading="parsing"
               :disabled="!transcript.trim()"
             >
-              解析會議
+              {{ $t('meeting.parseButton') }}
             </v-btn>
           </v-form>
         </v-card>
@@ -60,9 +50,9 @@ Summary
         <!-- Parsed Results -->
         <v-card v-if="parsedData" class="pa-6">
           <div class="d-flex justify-space-between align-center mb-4">
-            <h3 class="text-h6">解析結果</h3>
+            <h3 class="text-h6">{{ $t('meeting.results.title') }}</h3>
             <v-chip size="small" :color="confidenceColor" variant="tonal">
-              信心度: {{ parsedData.parse_confidence }}%
+              {{ $t('meeting.results.confidence', { score: parsedData.parse_confidence }) }}
             </v-chip>
           </div>
 
@@ -72,17 +62,17 @@ Summary
             variant="tonal"
             class="mb-4"
           >
-            有 {{ unmatchedParticipants.length }} 位參與者未匹配到專案成員，請手動指定。
+            {{ $t('meeting.results.unmatched', { count: unmatchedParticipants.length }) }}
           </v-alert>
 
           <v-table density="compact" class="mb-4">
             <thead>
               <tr>
-                <th style="width: 50px">啟用</th>
-                <th>參與者</th>
-                <th>對應成員</th>
-                <th class="text-right">原始比例</th>
-                <th class="text-right">分配比例</th>
+                <th style="width: 50px">{{ $t('meeting.table.enable') }}</th>
+                <th>{{ $t('meeting.table.participant') }}</th>
+                <th>{{ $t('meeting.table.matchedMember') }}</th>
+                <th class="text-right">{{ $t('meeting.table.originalRatio') }}</th>
+                <th class="text-right">{{ $t('meeting.table.allocRatio') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +124,7 @@ Summary
           </v-table>
 
           <div class="d-flex justify-space-between align-center mb-4">
-            <span class="text-body-2">總計比例:</span>
+            <span class="text-body-2">{{ $t('meeting.totalRatio') }}:</span>
             <v-chip :color="totalRatio === 100 ? 'success' : 'warning'">
               {{ totalRatio.toFixed(1) }}%
             </v-chip>
@@ -148,7 +138,7 @@ Summary
             :disabled="!canSubmit"
             @click="handleSubmit"
           >
-            確認並建立貢獻記錄
+            {{ $t('meeting.submitButton') }}
           </v-btn>
         </v-card>
 
@@ -156,13 +146,13 @@ Summary
         <v-card v-else class="pa-6" variant="tonal">
           <h3 class="text-h6 mb-4">
             <v-icon class="mr-2">mdi-lightbulb-outline</v-icon>
-            提示
+            {{ $t('meeting.tips.title') }}
           </h3>
           <ul class="text-body-2 text-medium-emphasis pl-4">
-            <li class="mb-2">系統會從 "Next steps" 區段提取參與者和任務</li>
-            <li class="mb-2">每個任務會根據關鍵字計算權重</li>
-            <li class="mb-2">可以手動調整比例，確保總計為 100%</li>
-            <li>未匹配的參與者需手動選擇對應的專案成員</li>
+            <li class="mb-2">{{ $t('meeting.tips.step1') }}</li>
+            <li class="mb-2">{{ $t('meeting.tips.step2') }}</li>
+            <li class="mb-2">{{ $t('meeting.tips.step3') }}</li>
+            <li>{{ $t('meeting.tips.step4') }}</li>
           </ul>
         </v-card>
       </v-col>
@@ -174,7 +164,9 @@ Summary
 import { ref, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api, type Project, type ParsedMeetingData } from '@/services/api'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar')!
@@ -200,7 +192,7 @@ const editableParticipants = ref<Array<{
 const memberOptions = computed(() => {
   if (!project.value?.members) return []
   return [
-    { text: '-- 請選擇 --', value: null },
+    { text: t('meeting.table.selectPlaceholder'), value: null },
     ...project.value.members.map(m => ({
       text: m.display_name,
       value: m.id,
@@ -270,7 +262,7 @@ async function loadProject() {
   try {
     project.value = await api.projects.get(projectId.value)
   } catch (e: any) {
-    showSnackbar(e.message || '載入專案失敗', 'error')
+    showSnackbar(e.message || t('profile.errorLoad'), 'error')
     router.back()
   }
 }
@@ -297,9 +289,9 @@ async function handleParse() {
       included: true,
     }))
 
-    showSnackbar('解析完成！', 'success')
+    showSnackbar(t('meeting.successParse'), 'success')
   } catch (e: any) {
-    showSnackbar(e.message || '解析失敗', 'error')
+    showSnackbar(e.message || t('meeting.errorParse'), 'error')
   } finally {
     parsing.value = false
   }
@@ -319,10 +311,10 @@ async function handleSubmit() {
     }))
 
     await api.meetings.process(projectId.value, meetingId.value, contributions)
-    showSnackbar('貢獻記錄建立成功！', 'success')
+    showSnackbar(t('meeting.successSubmit'), 'success')
     router.push(`/projects/${projectId.value}`)
   } catch (e: any) {
-    showSnackbar(e.message || '提交失敗', 'error')
+    showSnackbar(e.message || t('meeting.errorSubmit'), 'error')
   } finally {
     submitting.value = false
   }

@@ -1,0 +1,216 @@
+{
+	"common": {
+		"login": "登入",
+		"register": "註冊",
+		"logout": "登出",
+		"save": "儲存",
+		"cancel": "取消",
+		"confirm": "確認",
+		"delete": "刪除",
+		"edit": "編輯",
+		"loading": "載入中...",
+		"email": "Email",
+		"password": "密碼",
+		"submit": "送出",
+		"close": "關閉",
+		"back": "返回"
+	},
+	"nav": {
+		"dashboard": "儀表板",
+		"profile": "個人檔案",
+		"theme": "切換主題",
+		"language": "切換語言",
+		"logout": "登出",
+		"loggedOut": "已登出"
+	},
+	"auth": {
+		"loginTitle": "登入",
+		"loginSubtitle": "歡迎回來！請選擇登入方式",
+		"googleLogin": "使用 Google 登入",
+		"orEmail": "或使用 Email",
+		"noAccount": "還沒有帳號？",
+		"registerLink": "立即註冊",
+		"registerTitle": "註冊",
+		"registerSubtitle": "建立帳號開始追蹤貢獻",
+		"displayName": "顯示名稱",
+		"confirmPassword": "確認密碼",
+		"alreadyHaveAccount": "已經有帳號？",
+		"loginLink": "立即登入",
+		"passwordHint": "至少 8 個字元",
+		"successLogin": "登入成功！",
+		"successRegister": "註冊成功！",
+		"rules": {
+			"required": "此欄位為必填",
+			"email": "Email 格式不正確",
+			"minLength": "至少需要 {min} 個字元",
+			"match": "密碼不一致"
+		}
+	},
+	"dashboard": {
+		"title": "儀表板",
+		"subtitle": "管理你的專案和貢獻記錄",
+		"createProject": "建立專案",
+		"noProjects": "還沒有專案",
+		"startTracking": "建立你的第一個專案開始追蹤貢獻",
+		"roleAdmin": "管理員",
+		"roleMember": "成員",
+		"dialog": {
+			"title": "建立新專案",
+			"projectName": "專案名稱",
+			"description": "專案描述",
+			"tokenSymbol": "Token 符號",
+			"tokenHint": "選填，用於顯示 Token 獎勵"
+		},
+		"successCreate": "專案建立成功！",
+		"errorCreate": "建立專案失敗"
+	},
+	"project": {
+		"uploadMeeting": "上傳會議",
+		"distributeToken": "發放 Token",
+		"tabs": {
+			"overview": "總覽",
+			"contributions": "貢獻記錄",
+			"meetings": "會議",
+			"members": "成員",
+			"distributions": "發放紀錄"
+		},
+		"overview": {
+			"contributionDist": "貢獻分佈",
+			"noContributions": "尚無貢獻記錄",
+			"memberCount": "成員數",
+			"totalContribution": "總貢獻",
+			"tokenSymbol": "Token 符號",
+			"noDescription": "無描述"
+		},
+		"contributions": {
+			"columns": {
+				"member": "成員",
+				"ratio": "比例",
+				"source": "來源",
+				"description": "描述",
+				"date": "日期"
+			},
+			"source": {
+				"meeting": "會議",
+				"manual": "手動"
+			}
+		},
+		"meetings": {
+			"untitled": "未命名會議",
+			"processed": "已處理",
+			"pending": "待處理",
+			"noMeetings": "尚無會議記錄",
+			"deleteTitle": "刪除會議記錄",
+			"deleteConfirm": "確定要刪除「{title}」嗎？此動作無法復原。",
+			"deleted": "會議記錄已刪除",
+			"errorDelete": "刪除失敗"
+		},
+		"members": {
+			"title": "成員列表",
+			"add": "新增成員",
+			"emailLabel": "成員 Email",
+			"added": "成員新增成功！",
+			"admin": "管理員",
+			"member": "成員",
+			"errorAdd": "新增成員失敗"
+		},
+		"distributions": {
+			"untitled": "未命名里程碑",
+			"by": "由 {name} 發放",
+			"noDistributions": "尚無發放紀錄",
+			"onChainFailed": "On-Chain Failed"
+		}
+	},
+	"profile": {
+		"title": "個人檔案",
+		"displayName": "顯示名稱",
+		"aliases": "名稱別名 (Aliases)",
+		"aliasesHint": "輸入您的其他常用名稱（如英文名、中文名），按 Enter 新增。",
+		"walletAddress": "錢包地址 (ERC-20)",
+		"custodialWallet": "託管錢包",
+		"createWallet": "建立錢包",
+		"exportPrivateKey": "匯出私鑰",
+		"saveChanges": "儲存變更",
+		"successUpdate": "個人檔案已更新",
+		"successWallet": "錢包建立成功！",
+		"dialog": {
+			"title": "匯出私鑰",
+			"warning": "請勿將私鑰透露給任何人。擁有私鑰的人可以完全控制這個錢包的資產。",
+			"reveal": "顯示私鑰",
+			"errorReveal": "取得私鑰失敗"
+		},
+		"errorLoad": "載入失敗",
+		"errorSave": "儲存失敗",
+		"errorWallet": "建立錢包失敗"
+	},
+	"distribute": {
+		"title": "發放 Token",
+		"configTitle": "設定發放參數",
+		"historyTitle": "發放歷史",
+		"milestoneName": "里程碑名稱",
+		"milestonePlaceholder": "例如: Phase 1 Complete",
+		"totalTokens": "發放 Token 數量",
+		"onChain": "執行區塊鏈轉帳 (Sepolia Testnet)",
+		"onChainAlert": "系統將會從專案錢包發送 ERC-20 Token 至成員的錢包地址。請確保專案錢包有足夠的 ETH (Gas) 和 Token。",
+		"previewButton": "預覽分配",
+		"previewTitle": "分配預覽",
+		"confirmButton": "確認發放",
+		"columns": {
+			"member": "成員",
+			"contribRatio": "貢獻比例",
+			"distRatio": "分配比例",
+			"amount": "Token 數量"
+		},
+		"total": "總計",
+		"autoCalcAlert": "Token 會根據每位成員的累計貢獻比例自動計算分配。",
+		"emptyState": {
+			"title": "輸入發放參數",
+			"desc": "設定 Token 數量後點擊「預覽分配」查看分配結果"
+		},
+		"validate": {
+			"positiveInteger": "請輸入正整數"
+		},
+		"success": "Token 發放成功！",
+		"errorPreview": "預覽失敗",
+		"errorDistribute": "發放失敗"
+	},
+	"meeting": {
+		"title": "上傳會議紀錄",
+		"subtitle": "貼上 Zoom 會議摘要",
+		"desc": "將 Zoom AI 生成的會議摘要（Meeting Summary）貼上，系統會自動解析參與者和貢獻。",
+		"fields": {
+			"title": "會議標題",
+			"titlePlaceholder": "選填，系統會嘗試從摘要中解析",
+			"transcript": "會議摘要內容",
+			"transcriptPlaceholder": "會議摘要內容...\n\n重點回顧 (Quick recap)\n...\n\n後續步驟 (Next steps)\n...",
+			"validate": "請輸入會議內容"
+		},
+		"parseButton": "解析會議",
+		"results": {
+			"title": "解析結果",
+			"confidence": "信心度: {score}%",
+			"unmatched": "有 {count} 位參與者未匹配到專案成員，請手動指定。"
+		},
+		"table": {
+			"enable": "啟用",
+			"participant": "參與者",
+			"matchedMember": "對應成員",
+			"originalRatio": "原始比例",
+			"allocRatio": "分配比例",
+			"selectPlaceholder": "-- 請選擇 --"
+		},
+		"totalRatio": "總計比例",
+		"submitButton": "確認並建立貢獻記錄",
+		"tips": {
+			"title": "提示",
+			"step1": "系統會從 \"Next steps\" 區段提取參與者和任務",
+			"step2": "每個任務會根據關鍵字計算權重",
+			"step3": "可以手動調整比例，確保總計為 100%",
+			"step4": "未匹配的參與者需手動選擇對應的專案成員"
+		},
+		"successParse": "解析完成！",
+		"successSubmit": "貢獻記錄建立成功！",
+		"errorParse": "解析失敗",
+		"errorSubmit": "提交失敗"
+	}
+}

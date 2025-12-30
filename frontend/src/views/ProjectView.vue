@@ -16,7 +16,7 @@
             <h1 class="text-h4 font-weight-bold">{{ project.name }}</h1>
           </div>
           <p class="text-body-2 text-medium-emphasis ml-10">
-            {{ project.description || '無描述' }}
+            {{ project.description || $t('project.overview.noDescription') }}
           </p>
         </div>
         <div class="d-flex gap-2">
@@ -26,25 +26,25 @@
             prepend-icon="mdi-upload"
             :to="`/projects/${project.id}/meetings/new`"
           >
-            上傳會議
+            {{ $t('project.uploadMeeting') }}
           </v-btn>
           <v-btn
             color="primary"
             prepend-icon="mdi-coin"
             :to="`/projects/${project.id}/distribute`"
           >
-            發放 Token
+            {{ $t('project.distributeToken') }}
           </v-btn>
         </div>
       </div>
 
       <!-- Tabs -->
       <v-tabs v-model="activeTab" color="primary" class="mb-6">
-        <v-tab value="overview">總覽</v-tab>
-        <v-tab value="contributions">貢獻記錄</v-tab>
-        <v-tab value="meetings">會議</v-tab>
-        <v-tab value="members">成員</v-tab>
-        <v-tab value="distributions">發放紀錄</v-tab>
+        <v-tab value="overview">{{ $t('project.tabs.overview') }}</v-tab>
+        <v-tab value="contributions">{{ $t('project.tabs.contributions') }}</v-tab>
+        <v-tab value="meetings">{{ $t('project.tabs.meetings') }}</v-tab>
+        <v-tab value="members">{{ $t('project.tabs.members') }}</v-tab>
+        <v-tab value="distributions">{{ $t('project.tabs.distributions') }}</v-tab>
       </v-tabs>
 
       <v-window v-model="activeTab">
@@ -54,10 +54,10 @@
             <!-- Contribution Summary -->
             <v-col cols="12" lg="8">
               <v-card class="pa-6">
-                <h3 class="text-h6 mb-4">貢獻分佈</h3>
+                <h3 class="text-h6 mb-4">{{ $t('project.overview.contributionDist') }}</h3>
                 <div v-if="contributionSummary.length === 0" class="text-center py-8">
                   <v-icon icon="mdi-chart-pie" size="48" color="grey" class="mb-2" />
-                  <p class="text-body-2 text-medium-emphasis">尚無貢獻記錄</p>
+                  <p class="text-body-2 text-medium-emphasis">{{ $t('project.overview.noContributions') }}</p>
                 </div>
                 <div v-else>
                   <div
@@ -90,7 +90,7 @@
                     <v-icon>mdi-account-group</v-icon>
                   </v-avatar>
                   <div>
-                    <p class="text-body-2 text-medium-emphasis">成員數</p>
+                    <p class="text-body-2 text-medium-emphasis">{{ $t('project.overview.memberCount') }}</p>
                     <p class="text-h5 font-weight-bold">{{ project.members?.length || 0 }}</p>
                   </div>
                 </div>
@@ -102,7 +102,7 @@
                     <v-icon>mdi-chart-timeline</v-icon>
                   </v-avatar>
                   <div>
-                    <p class="text-body-2 text-medium-emphasis">總貢獻</p>
+                    <p class="text-body-2 text-medium-emphasis">{{ $t('project.overview.totalContribution') }}</p>
                     <p class="text-h5 font-weight-bold">{{ grandTotal.toFixed(1) }}</p>
                   </div>
                 </div>
@@ -114,7 +114,7 @@
                     <v-icon>mdi-coin</v-icon>
                   </v-avatar>
                   <div>
-                    <p class="text-body-2 text-medium-emphasis">Token 符號</p>
+                    <p class="text-body-2 text-medium-emphasis">{{ $t('project.overview.tokenSymbol') }}</p>
                     <p class="text-h5 font-weight-bold">
                       {{ project.token_symbol || '-' }}
                     </p>
@@ -141,7 +141,7 @@
               </template>
               <template #item.source_type="{ item }">
                 <v-chip size="small" variant="outlined">
-                  {{ item.source_type === 'meeting' ? '會議' : '手動' }}
+                  {{ item.source_type === 'meeting' ? $t('project.contributions.source.meeting') : $t('project.contributions.source.manual') }}
                 </v-chip>
               </template>
               <template #item.created_at="{ item }">
@@ -158,8 +158,8 @@
               <v-list-item
                 v-for="meeting in meetings"
                 :key="meeting.id"
-                :title="meeting.title || '未命名會議'"
-                :subtitle="`${formatDate(meeting.created_at)} · ${meeting.status === 'processed' ? '已處理' : '待處理'}`"
+                :title="meeting.title || $t('project.meetings.untitled')"
+                :subtitle="`${formatDate(meeting.created_at)} · ${meeting.status === 'processed' ? $t('project.meetings.processed') : $t('project.meetings.pending')}`"
               >
                 <template #prepend>
                   <v-avatar color="secondary" variant="tonal">
@@ -173,7 +173,7 @@
                       size="small"
                       class="mr-2"
                     >
-                      {{ meeting.status === 'processed' ? '已處理' : '待處理' }}
+                      {{ meeting.status === 'processed' ? $t('project.meetings.processed') : $t('project.meetings.pending') }}
                     </v-chip>
 
                     <v-btn
@@ -192,7 +192,7 @@
             </v-list>
             <div v-else class="text-center py-12">
               <v-icon icon="mdi-video-off" size="48" color="grey" class="mb-2" />
-              <p class="text-body-2 text-medium-emphasis">尚無會議記錄</p>
+              <p class="text-body-2 text-medium-emphasis">{{ $t('project.meetings.noMeetings') }}</p>
             </div>
           </v-card>
         </v-window-item>
@@ -200,19 +200,19 @@
         <!-- Delete Meeting Confirmation Dialog -->
         <v-dialog v-model="showDeleteMeetingDialog" max-width="400">
           <v-card>
-            <v-card-title>刪除會議記錄</v-card-title>
+            <v-card-title>{{ $t('project.meetings.deleteTitle') }}</v-card-title>
             <v-card-text>
-              確定要刪除「{{ meetingToDelete?.title || '此會議' }}」嗎？此動作無法復原。
+              {{ T('project.meetings.deleteConfirm', { title: meetingToDelete?.title || $t('project.meetings.untitled') }) }}
             </v-card-text>
             <v-card-actions>
               <v-spacer />
-              <v-btn variant="text" @click="showDeleteMeetingDialog = false">取消</v-btn>
+              <v-btn variant="text" @click="showDeleteMeetingDialog = false">{{ $t('common.cancel') }}</v-btn>
               <v-btn
                 color="error"
                 :loading="deletingMeeting"
                 @click="handleDeleteMeeting"
               >
-                刪除
+                {{ $t('common.delete') }}
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -222,7 +222,7 @@
         <v-window-item value="members">
           <v-card>
             <v-card-title class="d-flex align-center">
-              <span>成員列表</span>
+              <span>{{ $t('project.members.title') }}</span>
               <v-spacer />
               <v-btn
                 v-if="project.current_user_role === 'admin'"
@@ -231,7 +231,7 @@
                 prepend-icon="mdi-account-plus"
                 @click="showAddMemberDialog = true"
               >
-                新增成員
+                {{ $t('project.members.add') }}
               </v-btn>
             </v-card-title>
             <v-list>
@@ -255,7 +255,7 @@
                       size="small"
                       :color="member.role === 'admin' ? 'primary' : 'default'"
                     >
-                      {{ member.role === 'admin' ? '管理員' : '成員' }}
+                      {{ member.role === 'admin' ? $t('project.members.admin') : $t('project.members.member') }}
                     </v-chip>
                   </div>
                 </template>
@@ -272,8 +272,8 @@
               <v-list-item
                 v-for="dist in distributions"
                 :key="dist.id"
-                :title="dist.milestone_name || '未命名里程碑'"
-                :subtitle="`${formatDate(dist.created_at)} · 由 ${dist.created_by_name || 'Admin'} 發放`"
+                :title="dist.milestone_name || $t('project.distributions.untitled')"
+                :subtitle="`${formatDate(dist.created_at)} · ${$t('project.distributions.by', { name: dist.created_by_name || 'Admin' })}`"
                 :href="dist.tx_hash ? `https://sepolia.etherscan.io/tx/${dist.tx_hash}` : undefined"
                 :target="dist.tx_hash ? '_blank' : undefined"
               >
@@ -298,7 +298,7 @@
                     </v-tooltip>
 
                     <v-chip v-if="dist.on_chain && !dist.tx_hash" size="small" color="error" variant="outlined">
-                      On-Chain Failed
+                      {{ $t('project.distributions.onChainFailed') }}
                     </v-chip>
                   </div>
                 </template>
@@ -306,7 +306,7 @@
             </v-list>
             <div v-else class="text-center py-12">
               <v-icon icon="mdi-gift-off" size="48" color="grey" class="mb-2" />
-              <p class="text-body-2 text-medium-emphasis">尚無發放紀錄</p>
+              <p class="text-body-2 text-medium-emphasis">{{ $t('project.distributions.noDistributions') }}</p>
             </div>
           </v-card>
         </v-window-item>
@@ -316,20 +316,20 @@
     <!-- Add Member Dialog -->
     <v-dialog v-model="showAddMemberDialog" max-width="400">
       <v-card class="pa-4">
-        <v-card-title>新增成員</v-card-title>
+        <v-card-title>{{ $t('project.members.add') }}</v-card-title>
         <v-card-text>
           <v-text-field
             v-model="newMemberEmail"
-            label="成員 Email"
+            :label="$t('project.members.emailLabel')"
             type="email"
-            :rules="[v => /.+@.+\..+/.test(v) || 'Email 格式不正確']"
+            :rules="[v => /.+@.+\..+/.test(v) || t('auth.rules.email')]"
           />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="showAddMemberDialog = false">取消</v-btn>
+          <v-btn variant="text" @click="showAddMemberDialog = false">{{ $t('common.cancel') }}</v-btn>
           <v-btn color="primary" :loading="addingMember" @click="handleAddMember">
-            新增
+            {{ $t('common.confirm') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -342,7 +342,10 @@ import { ref, onMounted, inject, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { api, type Project, type Contribution, type Meeting, type TokenDistribution } from '@/services/api'
+import { useI18n } from 'vue-i18n'
 
+const { t: T } = useI18n() // Use T to avoid conflict with t variable if any, or just consistent T() for template
+const t = T // Alias for script usage
 const route = useRoute()
 const authStore = useAuthStore()
 const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar')!
@@ -367,20 +370,18 @@ const showDeleteMeetingDialog = ref(false)
 const meetingToDelete = ref<Meeting | null>(null)
 const deletingMeeting = ref(false)
 
-const contributionHeaders = [
-  { title: '成員', key: 'user_display_name' },
-  { title: '比例', key: 'ratio' },
-  { title: '來源', key: 'source_type' },
-  { title: '描述', key: 'description' },
-  { title: '日期', key: 'created_at' },
-]
+const contributionHeaders = computed(() => [
+  { title: t('project.contributions.columns.member'), key: 'user_display_name' },
+  { title: t('project.contributions.columns.ratio'), key: 'ratio' },
+  { title: t('project.contributions.columns.source'), key: 'source_type' },
+  { title: t('project.contributions.columns.description'), key: 'description' },
+  { title: t('project.contributions.columns.date'), key: 'created_at' },
+])
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+  // Use user browser locale or force based on i18n.locale if needed
+  // For now simple date format
+  return new Date(dateStr).toLocaleDateString()
 }
 
 async function loadProject() {
@@ -442,12 +443,12 @@ async function handleAddMember() {
   addingMember.value = true
   try {
     await api.projects.addMember(projectId.value, { email: newMemberEmail.value })
-    showSnackbar('成員新增成功！', 'success')
+    showSnackbar(t('project.members.added'), 'success')
     showAddMemberDialog.value = false
     newMemberEmail.value = ''
     await loadProject()
   } catch (e: any) {
-    showSnackbar(e.message || '新增成員失敗', 'error')
+    showSnackbar(e.message || t('project.members.errorAdd'), 'error')
   } finally {
     addingMember.value = false
   }
@@ -464,11 +465,11 @@ async function handleDeleteMeeting() {
   deletingMeeting.value = true
   try {
     await api.meetings.delete(projectId.value, meetingToDelete.value.id)
-    showSnackbar('會議記錄已刪除', 'success')
+    showSnackbar(t('project.meetings.deleted'), 'success')
     showDeleteMeetingDialog.value = false
     await loadMeetings()
   } catch (e: any) {
-    showSnackbar(e.message || '刪除失敗', 'error')
+    showSnackbar(e.message || t('project.meetings.errorDelete'), 'error')
   } finally {
     deletingMeeting.value = false
     meetingToDelete.value = null

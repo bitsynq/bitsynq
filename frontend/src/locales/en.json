@@ -1,0 +1,216 @@
+{
+	"common": {
+		"login": "Login",
+		"register": "Register",
+		"logout": "Logout",
+		"save": "Save",
+		"cancel": "Cancel",
+		"confirm": "Confirm",
+		"delete": "Delete",
+		"edit": "Edit",
+		"loading": "Loading...",
+		"email": "Email",
+		"password": "Password",
+		"submit": "Submit",
+		"close": "Close",
+		"back": "Back"
+	},
+	"nav": {
+		"dashboard": "Dashboard",
+		"profile": "Profile",
+		"theme": "Toggle Theme",
+		"language": "Toggle Language",
+		"logout": "Logout",
+		"loggedOut": "Logged out"
+	},
+	"auth": {
+		"loginTitle": "Login",
+		"loginSubtitle": "Welcome back! Please choose a login method",
+		"googleLogin": "Sign in with Google",
+		"orEmail": "Or use Email",
+		"noAccount": "Don't have an account?",
+		"registerLink": "Register now",
+		"registerTitle": "Register",
+		"registerSubtitle": "Create an account to track contributions",
+		"displayName": "Display Name",
+		"confirmPassword": "Confirm Password",
+		"alreadyHaveAccount": "Already have an account?",
+		"loginLink": "Login now",
+		"passwordHint": "At least 8 characters",
+		"successLogin": "Login successful!",
+		"successRegister": "Registration successful!",
+		"rules": {
+			"required": "This field is required",
+			"email": "Invalid email format",
+			"minLength": "At least {min} characters required",
+			"match": "Passwords do not match"
+		}
+	},
+	"dashboard": {
+		"title": "Dashboard",
+		"subtitle": "Manage your projects and contribution records",
+		"createProject": "Create Project",
+		"noProjects": "No projects yet",
+		"startTracking": "Create your first project to start tracking",
+		"roleAdmin": "Admin",
+		"roleMember": "Member",
+		"dialog": {
+			"title": "Create New Project",
+			"projectName": "Project Name",
+			"description": "Description",
+			"tokenSymbol": "Token Symbol",
+			"tokenHint": "Optional, for displaying token rewards"
+		},
+		"successCreate": "Project created successfully!",
+		"errorCreate": "Failed to create project"
+	},
+	"project": {
+		"uploadMeeting": "Upload Meeting",
+		"distributeToken": "Distribute Token",
+		"tabs": {
+			"overview": "Overview",
+			"contributions": "Contributions",
+			"meetings": "Meetings",
+			"members": "Members",
+			"distributions": "Distributions"
+		},
+		"overview": {
+			"contributionDist": "Contribution Distribution",
+			"noContributions": "No contributions yet",
+			"memberCount": "Members",
+			"totalContribution": "Total Contributions",
+			"tokenSymbol": "Token Symbol",
+			"noDescription": "No description"
+		},
+		"contributions": {
+			"columns": {
+				"member": "Member",
+				"ratio": "Ratio",
+				"source": "Source",
+				"description": "Description",
+				"date": "Date"
+			},
+			"source": {
+				"meeting": "Meeting",
+				"manual": "Manual"
+			}
+		},
+		"meetings": {
+			"untitled": "Untitled Meeting",
+			"processed": "Processed",
+			"pending": "Pending",
+			"noMeetings": "No meetings yet",
+			"deleteTitle": "Delete Meeting",
+			"deleteConfirm": "Are you sure you want to delete '{title}'? This action cannot be undone.",
+			"deleted": "Meeting deleted",
+			"errorDelete": "Failed to delete meeting"
+		},
+		"members": {
+			"title": "Members List",
+			"add": "Add Member",
+			"emailLabel": "Member Email",
+			"added": "Member added successfully!",
+			"admin": "Admin",
+			"member": "Member",
+			"errorAdd": "Failed to add member"
+		},
+		"distributions": {
+			"untitled": "Untitled Milestone",
+			"by": "Distributed by {name}",
+			"noDistributions": "No distributions yet",
+			"onChainFailed": "On-Chain Failed"
+		}
+	},
+	"profile": {
+		"title": "Profile",
+		"displayName": "Display Name",
+		"aliases": "Aliases",
+		"aliasesHint": "Enter other names (e.g. English name), press Enter to add.",
+		"walletAddress": "Wallet Address (ERC-20)",
+		"custodialWallet": "Custodial Wallet",
+		"createWallet": "Create Wallet",
+		"exportPrivateKey": "Export Private Key",
+		"saveChanges": "Save Changes",
+		"successUpdate": "Profile updated",
+		"successWallet": "Wallet created successfully!",
+		"dialog": {
+			"title": "Export Private Key",
+			"warning": "Do not share your private key. Anyone with the key can control the assets.",
+			"reveal": "Reveal Private Key",
+			"errorReveal": "Failed to get private key"
+		},
+		"errorLoad": "Failed to load",
+		"errorSave": "Failed to save",
+		"errorWallet": "Failed to create wallet"
+	},
+	"distribute": {
+		"title": "Distribute Tokens",
+		"configTitle": "Configure Parameters",
+		"historyTitle": "Distribution History",
+		"milestoneName": "Milestone Name",
+		"milestonePlaceholder": "e.g. Phase 1 Complete",
+		"totalTokens": "Total Tokens to Distribute",
+		"onChain": "Execute On-Chain Transfer (Sepolia Testnet)",
+		"onChainAlert": "System will send ERC-20 tokens from project wallet to member wallets. Ensure project wallet has enough ETH (Gas) and tokens.",
+		"previewButton": "Preview Distribution",
+		"previewTitle": "Distribution Preview",
+		"confirmButton": "Confirm Distribution",
+		"columns": {
+			"member": "Member",
+			"contribRatio": "Contribution Ratio",
+			"distRatio": "Allocated Ratio",
+			"amount": "Token Amount"
+		},
+		"total": "Total",
+		"autoCalcAlert": "Tokens are allocated automatically based on cumulative contribution ratio.",
+		"emptyState": {
+			"title": "Enter Parameters",
+			"desc": "Set total tokens and click 'Preview' to see results"
+		},
+		"validate": {
+			"positiveInteger": "Please enter a positive integer"
+		},
+		"success": "Tokens distributed successfully!",
+		"errorPreview": "Preview failed",
+		"errorDistribute": "Distribution failed"
+	},
+	"meeting": {
+		"title": "Upload Meeting",
+		"subtitle": "Paste Zoom Summary",
+		"desc": "Paste the Zoom AI generated Meeting Summary. System will parse participants and tasks.",
+		"fields": {
+			"title": "Meeting Title",
+			"titlePlaceholder": "Optional, will try to parse from summary",
+			"transcript": "Meeting Summary Content",
+			"transcriptPlaceholder": "Meeting summary...\n\nQuick recap\n...\n\nNext steps\n...",
+			"validate": "Please enter meeting content"
+		},
+		"parseButton": "Parse Meeting",
+		"results": {
+			"title": "Parsed Results",
+			"confidence": "Confidence: {score}%",
+			"unmatched": "{count} participants not matched to members. Please select manually."
+		},
+		"table": {
+			"enable": "Enable",
+			"participant": "Participant",
+			"matchedMember": "Matched Member",
+			"originalRatio": "Orig. Ratio",
+			"allocRatio": "Alloc. Ratio",
+			"selectPlaceholder": "-- Select --"
+		},
+		"totalRatio": "Total Ratio",
+		"submitButton": "Confirm & Create Records",
+		"tips": {
+			"title": "Tips",
+			"step1": "System extracts participants and tasks from 'Next steps'",
+			"step2": "Each task is weighted by keywords",
+			"step3": "You can manually adjust ratios (must sum to 100%)",
+			"step4": "Unmatched participants must be mapped to project members"
+		},
+		"successParse": "Parsing complete!",
+		"successSubmit": "Contribution records created!",
+		"errorParse": "Parsing failed",
+		"errorSubmit": "Submission failed"
+	}
+}
