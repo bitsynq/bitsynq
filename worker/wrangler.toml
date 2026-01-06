@@ -13,6 +13,11 @@ database_id = "78f32d0d-3e4c-4b26-bdff-cfd740d38e05"
 binding = "SESSION_KV"
 id = "39e73c6ee1c644b3b87948a4a8b18382"
 
+# KV Namespace for evidence storage (transcripts, etc.)
+[[kv_namespaces]]
+binding = "EVIDENCE_KV"
+id = "04448de9f67e421a82d2f2d72a55fb6a"
+
 # Environment variables
 [vars]
 JWT_SECRET = "change-this-in-production"
@@ -29,4 +34,5 @@ GOOGLE_REDIRECT_URI = "https://bitsynq.pages.dev/auth/google/callback"
 ETH_RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com"
 # ETH_PRIVATE_KEY = "Set via wrangler secret"
 # ETH_TOKEN_CONTRACT = "Set via wrangler secret after deploying ERC-20"
+
 

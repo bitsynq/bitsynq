@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import type { Env, Meeting, CreateMeetingRequest, ProcessMeetingRequest } from '../types';
 import { verifyToken, generateId } from '../middleware/auth';
 import { parseMeetingTranscript, matchParticipantsToMembers } from '../services/meeting-parser';
+import { StorageService } from '../services/storage';
 
 // Extended context with user info
 type AuthContext = {
@@ -135,6 +136,16 @@ meetings.post('/:projectId/meetings', async (c) => {
 			userId,
 			now
 		).run();
+
+		// Upload transcript to R2 (Evidence Storage)
+		const storage = new StorageService(c.env);
+		try {
+			await storage.uploadTranscript(meetingId, body.raw_transcript);
+		} catch (e) {
+			console.error(`Failed to upload transcript evidence for meeting ${meetingId}:`, e);
+			// Log the error but proceed, as the raw_transcript is already in the DB.
+			// Depending on requirements, this might need to be a hard failure.
+		}
 
 		return c.json({
 			id: meetingId,

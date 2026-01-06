@@ -182,6 +182,7 @@ export interface ParsedMeetingData {
 export interface Env {
 	DB: D1Database;
 	SESSION_KV: KVNamespace;
+	EVIDENCE_KV: KVNamespace;
 	JWT_SECRET: string;
 	CORS_ORIGIN: string;
 	// Google OAuth
