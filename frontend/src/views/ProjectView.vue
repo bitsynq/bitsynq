@@ -45,6 +45,7 @@
         <v-tab value="meetings">{{ $t('project.tabs.meetings') }}</v-tab>
         <v-tab value="members">{{ $t('project.tabs.members') }}</v-tab>
         <v-tab value="distributions">{{ $t('project.tabs.distributions') }}</v-tab>
+        <v-tab value="transactions">Chain Logs</v-tab>
       </v-tabs>
 
       <v-window v-model="activeTab">
@@ -197,27 +198,6 @@
           </v-card>
         </v-window-item>
 
-        <!-- Delete Meeting Confirmation Dialog -->
-        <v-dialog v-model="showDeleteMeetingDialog" max-width="400">
-          <v-card>
-            <v-card-title>{{ $t('project.meetings.deleteTitle') }}</v-card-title>
-            <v-card-text>
-              {{ T('project.meetings.deleteConfirm', { title: meetingToDelete?.title || $t('project.meetings.untitled') }) }}
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer />
-              <v-btn variant="text" @click="showDeleteMeetingDialog = false">{{ $t('common.cancel') }}</v-btn>
-              <v-btn
-                color="error"
-                :loading="deletingMeeting"
-                @click="handleDeleteMeeting"
-              >
-                {{ $t('common.delete') }}
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-
         <!-- Members Tab -->
         <v-window-item value="members">
           <v-card>
@@ -264,7 +244,6 @@
           </v-card>
         </v-window-item>
 
-
         <!-- Distributions Tab -->
         <v-window-item value="distributions">
           <v-card>
@@ -310,6 +289,11 @@
             </div>
           </v-card>
         </v-window-item>
+
+        <!-- Transactions Tab (New) -->
+        <v-window-item value="transactions">
+          <TransactionList :project-id="projectId" />
+        </v-window-item>
       </v-window>
     </template>
 
@@ -334,6 +318,27 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Delete Meeting Confirmation Dialog -->
+    <v-dialog v-model="showDeleteMeetingDialog" max-width="400">
+      <v-card>
+        <v-card-title>{{ $t('project.meetings.deleteTitle') }}</v-card-title>
+        <v-card-text>
+          {{ t('project.meetings.deleteConfirm', { title: meetingToDelete?.title || $t('project.meetings.untitled') }) }}
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showDeleteMeetingDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn
+            color="error"
+            :loading="deletingMeeting"
+            @click="handleDeleteMeeting"
+          >
+            {{ $t('common.delete') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -343,9 +348,10 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { api, type Project, type Contribution, type Meeting, type TokenDistribution } from '@/services/api'
 import { useI18n } from 'vue-i18n'
+import TransactionList from '@/components/TransactionList.vue'
 
-const { t: T } = useI18n() // Use T to avoid conflict with t variable if any, or just consistent T() for template
-const t = T // Alias for script usage
+const { t: T } = useI18n()
+const t = T
 const route = useRoute()
 const authStore = useAuthStore()
 const showSnackbar = inject<(msg: string, color?: string) => void>('showSnackbar')!
@@ -379,8 +385,6 @@ const contributionHeaders = computed(() => [
 ])
 
 function formatDate(dateStr: string): string {
-  // Use user browser locale or force based on i18n.locale if needed
-  // For now simple date format
   return new Date(dateStr).toLocaleDateString()
 }
 

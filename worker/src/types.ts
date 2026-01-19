@@ -1,6 +1,5 @@
 /**
  * Type definitions for Bitsynq API
- * These types match the D1 database schema
  */
 
 // =============================================================================
@@ -12,10 +11,10 @@ export interface User {
 	email: string;
 	password_hash: string;
 	display_name: string;
-	aliases?: string[]; // Parsed from JSON
+	aliases?: string[];
 	wallet_address: string | null;
-	has_custodial_wallet?: boolean; // Derived field
-	encrypted_private_key?: string | null; // Encrypted private key (server-side only)
+	has_custodial_wallet?: boolean;
+	encrypted_private_key?: string | null;
 	avatar_url: string | null;
 	created_at: string;
 	updated_at: string;
@@ -45,7 +44,7 @@ export interface Meeting {
 	title: string | null;
 	meeting_date: string | null;
 	raw_transcript: string | null;
-	parsed_data: string | null; // JSON string of ParsedMeetingData
+	parsed_data: string | null;
 	status: 'pending' | 'processed';
 	created_by: string;
 	created_at: string;
@@ -68,7 +67,7 @@ export interface TokenDistribution {
 	project_id: string;
 	milestone_name: string | null;
 	total_tokens: number;
-	distribution_data: string | null; // JSON string
+	distribution_data: string | null;
 	tx_hash: string | null;
 	status: 'pending' | 'confirmed';
 	created_by: string;
@@ -87,7 +86,6 @@ export interface UserBalance {
 // API REQUEST/RESPONSE TYPES
 // =============================================================================
 
-// Auth
 export interface RegisterRequest {
 	email: string;
 	password: string;
@@ -104,7 +102,6 @@ export interface AuthResponse {
 	user: Omit<User, 'password_hash'>;
 }
 
-// Projects
 export interface CreateProjectRequest {
 	name: string;
 	description?: string;
@@ -120,18 +117,16 @@ export interface UpdateProjectRequest {
 
 export interface AddMemberRequest {
 	user_id?: string;
-	email?: string; // Alternative: find user by email
+	email?: string;
 	role?: 'admin' | 'member';
 }
 
-// Contributions
 export interface CreateContributionRequest {
 	user_id: string;
 	ratio: number;
 	description?: string;
 }
 
-// Meetings
 export interface CreateMeetingRequest {
 	title?: string;
 	meeting_date?: string;
@@ -146,16 +141,11 @@ export interface ProcessMeetingRequest {
 	}>;
 }
 
-// Token Distribution
 export interface DistributeTokensRequest {
 	milestone_name?: string;
 	total_tokens: number;
-	on_chain?: boolean; // If true, execute blockchain transfer
+	on_chain?: boolean;
 }
-
-// =============================================================================
-// MEETING PARSER TYPES
-// =============================================================================
 
 export interface ParsedParticipant {
 	name: string;
@@ -175,36 +165,25 @@ export interface ParsedMeetingData {
 	parse_confidence: number;
 }
 
-// =============================================================================
-// CLOUDFLARE BINDINGS
-// =============================================================================
-
 export interface Env {
 	DB: D1Database;
 	SESSION_KV: KVNamespace;
 	EVIDENCE_KV: KVNamespace;
 	JWT_SECRET: string;
 	CORS_ORIGIN: string;
-	// Google OAuth
 	GOOGLE_CLIENT_ID: string;
 	GOOGLE_CLIENT_SECRET: string;
 	GOOGLE_REDIRECT_URI: string;
-	// Ethereum (Sepolia testnet)
 	ETH_RPC_URL: string;
 	ETH_PRIVATE_KEY: string;
 	ETH_TOKEN_CONTRACT: string;
 	ETH_BATCH_DISTRIBUTOR: string;
-	// Security
 	ENCRYPTION_SECRET: string;
 }
 
-// =============================================================================
-// JWT PAYLOAD
-// =============================================================================
-
 export interface JWTPayload {
-	sub: string;      // user id
+	sub: string;
 	email: string;
-	exp: number;      // expiration timestamp
-	iat: number;      // issued at timestamp
+	exp: number;
+	iat: number;
 }

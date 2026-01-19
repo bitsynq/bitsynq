@@ -24,15 +24,7 @@ JWT_SECRET = "change-this-in-production"
 CORS_ORIGIN = "https://bitsynq.pages.dev"
 
 # Google OAuth Configuration
-# Get these from: https://console.cloud.google.com/apis/credentials
-# GOOGLE_CLIENT_ID = "Set via wrangler secret"
-# GOOGLE_CLIENT_SECRET = "Set via wrangler secret"
 GOOGLE_REDIRECT_URI = "https://bitsynq.pages.dev/auth/google/callback"
 
 # Ethereum Configuration (Sepolia Testnet)
-# Free public RPC endpoints: https://chainlist.org/chain/11155111
 ETH_RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com"
-# ETH_PRIVATE_KEY = "Set via wrangler secret"
-# ETH_TOKEN_CONTRACT = "Set via wrangler secret after deploying ERC-20"
-
-
