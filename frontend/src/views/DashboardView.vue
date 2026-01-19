@@ -51,10 +51,10 @@
             <v-card-subtitle>
               <v-chip
                 size="x-small"
-                :color="project.member_role === 'admin' ? 'primary' : 'default'"
+                :color="project.current_user_role === 'admin' ? 'primary' : 'default'"
                 class="mr-2"
               >
-                {{ project.member_role === 'admin' ? $t('dashboard.roleAdmin') : $t('dashboard.roleMember') }}
+                {{ project.current_user_role === 'admin' ? $t('dashboard.roleAdmin') : $t('dashboard.roleMember') }}
               </v-chip>
               <span v-if="project.token_symbol">
                 {{ project.token_symbol }}

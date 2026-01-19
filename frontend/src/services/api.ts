@@ -9,6 +9,8 @@ export interface User {
   wallet_address: string | null
   avatar_url: string | null
   created_at: string
+  has_custodial_wallet?: boolean
+  aliases?: string[]
 }
 
 export interface Project {
@@ -21,6 +23,7 @@ export interface Project {
   created_at: string
   updated_at: string
   members?: ProjectMember[]
+  current_user_role?: 'admin' | 'member' // Added this
 }
 
 export interface ProjectMember {
@@ -31,6 +34,7 @@ export interface ProjectMember {
   joined_at: string
   avatar_url?: string | null
   wallet_address?: string | null
+  balance?: number // Added this
 }
 
 export interface Meeting {
@@ -40,6 +44,7 @@ export interface Meeting {
   meeting_date: string | null
   status: 'pending' | 'processed'
   created_at: string
+  created_by?: string
 }
 
 export interface ParsedParticipant {
@@ -69,6 +74,7 @@ export interface Contribution {
   source_id: string | null
   description: string | null
   created_at: string
+  user_display_name?: string
   user?: {
     display_name: string
     avatar_url: string | null
@@ -84,6 +90,20 @@ export interface UserBalance {
     display_name: string
     avatar_url: string | null
   }
+}
+
+export interface TokenDistribution {
+  id: string
+  project_id: string
+  milestone_name: string | null
+  total_tokens: number
+  distribution_data: string | null
+  tx_hash: string | null
+  status: 'pending' | 'confirmed'
+  created_by: string
+  created_at: string
+  created_by_name?: string
+  on_chain?: boolean
 }
 
 // Transaction Logs
@@ -113,6 +133,21 @@ export interface TransactionResponse {
     next_cursor?: string
     has_more: boolean
   }
+}
+
+export interface AuthResponse {
+  token: string
+  user: User
+}
+
+export interface DistributionPreview {
+  allocations: Array<{
+    user_id: string
+    display_name: string
+    current_ratio: number
+    amount: number
+  }>
+  total_tokens: number
 }
 
 // API Service
@@ -149,45 +184,65 @@ class ApiService {
 
   // Auth
   auth = {
-    register: (data: any) => this.client.post('/auth/register', data).then(r => r.data),
-    login: (data: any) => this.client.post('/auth/login', data).then(r => r.data),
-    getProfile: () => this.client.get('/auth/me').then(r => r.data),
+    register: (data: any) => this.client.post<AuthResponse>('/auth/register', data).then(r => r.data),
+    login: (data: any) => this.client.post<AuthResponse>('/auth/login', data).then(r => r.data),
+    getProfile: () => this.client.get<User>('/auth/me').then(r => r.data),
+    googleUrl: () => this.client.get<{ url: string }>('/auth/google/url').then(r => r.data),
+    googleCallback: (code: string) => this.client.post<AuthResponse>('/auth/google/callback', { code }).then(r => r.data),
+  }
+
+  // Users
+  users = {
+    updateProfile: (data: any) => this.client.put<User>('/users/me', data).then(r => r.data),
+    generateWallet: () => this.client.post<{ wallet_address: string }>('/users/me/wallet').then(r => r.data),
+    getPrivateKey: () => this.client.get<{ private_key: string }>('/users/me/wallet/private-key').then(r => r.data),
   }
 
   // Projects
   projects = {
-    list: () => this.client.get('/projects').then(r => r.data),
-    create: (data: any) => this.client.post('/projects', data).then(r => r.data),
-    get: (id: string) => this.client.get(`/projects/${id}`).then(r => r.data),
-    getMembers: (id: string) => this.client.get(`/projects/${id}/members`).then(r => r.data),
+    list: () => this.client.get<Project[]>('/projects').then(r => r.data),
+    create: (data: any) => this.client.post<Project>('/projects', data).then(r => r.data),
+    get: (id: string) => this.client.get<Project>(`/projects/${id}`).then(r => r.data),
+    getMembers: (id: string) => this.client.get<ProjectMember[]>(`/projects/${id}/members`).then(r => r.data),
     addMember: (id: string, data: any) => this.client.post(`/projects/${id}/members`, data).then(r => r.data),
-    getBalances: (id: string) => this.client.get(`/projects/${id}/balances`).then(r => r.data),
+    getBalances: (id: string) => this.client.get<UserBalance[]>(`/projects/${id}/balances`).then(r => r.data),
   }
 
   // Meetings
   meetings = {
+    list: (projectId: string) => this.client.get<Meeting[]>(`/projects/${projectId}/meetings`).then(r => r.data),
     create: (projectId: string, data: any) => 
-      this.client.post(`/projects/${projectId}/meetings`, data).then(r => r.data),
+      this.client.post<{ id: string; parsed_data: ParsedMeetingData }>(`/projects/${projectId}/meetings`, data).then(r => r.data),
     process: (projectId: string, meetingId: string, contributions: any[]) =>
       this.client.post(`/projects/${projectId}/meetings/${meetingId}/process`, { contributions }).then(r => r.data),
+    delete: (projectId: string, meetingId: string) =>
+      this.client.delete(`/projects/${projectId}/meetings/${meetingId}`).then(r => r.data),
+  }
+
+  // Contributions
+  contributions = {
+    list: (projectId: string) => this.client.get<{ contributions: Contribution[] }>(`/projects/${projectId}/contributions`).then(r => r.data),
+    summary: (projectId: string) => this.client.get<{ summary: any[]; grand_total: number }>(`/projects/${projectId}/contributions/summary`).then(r => r.data),
   }
 
   // Tokens
   tokens = {
-    previewDistribution: (projectId: string, totalTokens: number) =>
-      this.client.post(`/projects/${projectId}/distributions/preview`, { total_tokens: totalTokens }).then(r => r.data),
+    preview: (projectId: string, totalTokens: number) =>
+      this.client.post<DistributionPreview>(`/projects/${projectId}/distributions/preview`, { total_tokens: totalTokens }).then(r => r.data),
     distribute: (projectId: string, data: any) =>
       this.client.post(`/projects/${projectId}/distribute`, data).then(r => r.data),
+    distributions: (projectId: string) =>
+      this.client.get<TokenDistribution[]>(`/projects/${projectId}/distributions`).then(r => r.data),
   }
 
   // Transactions
   transactions = {
     list: (projectId: string, params?: any) =>
-      this.client.get<TransactionResponse>(`/transactions/${projectId}`, { params }).then(r => r.data),
+      this.client.get<TransactionResponse>(`/projects/${projectId}/transactions`, { params }).then(r => r.data), // Fix route to match worker
     get: (projectId: string, txId: string) =>
-      this.client.get(`/transactions/${projectId}/${txId}`).then(r => r.data),
+      this.client.get(`/projects/${projectId}/transactions/${txId}`).then(r => r.data),
     retry: (projectId: string, txId: string) =>
-      this.client.post(`/transactions/${projectId}/${txId}/retry`).then(r => r.data),
+      this.client.post(`/projects/${projectId}/transactions/${txId}/retry`).then(r => r.data),
   }
 }
 

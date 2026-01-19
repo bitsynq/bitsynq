@@ -116,7 +116,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in preview.distribution" :key="item.user_id">
+              <tr v-for="item in preview.allocations" :key="item.user_id">
                 <td>
                   <div class="d-flex align-center gap-2">
                     <v-avatar color="primary" variant="tonal" size="32">
@@ -125,9 +125,10 @@
                     {{ item.display_name }}
                   </div>
                 </td>
-                <td class="text-right">{{ item.total_ratio.toFixed(1) }}</td>
-                <td class="text-right">{{ item.percentage.toFixed(2) }}%</td>
-                <td class="text-right font-weight-bold">{{ item.token_amount }}</td>
+                <td class="text-right">{{ item.current_ratio.toFixed(1) }}</td>
+                <!-- Use calculated percentage if available or derive it -->
+                <td class="text-right">{{ ((item.amount / preview.total_tokens) * 100).toFixed(2) }}%</td>
+                <td class="text-right font-weight-bold">{{ item.amount }}</td>
               </tr>
             </tbody>
             <tfoot>
@@ -208,10 +209,8 @@ async function handlePreview() {
 
   previewing.value = true
   try {
-    preview.value = await api.tokens.preview(projectId.value, {
-      milestone_name: milestoneName.value || undefined,
-      total_tokens: totalTokens.value,
-    })
+    // Correctly call api.tokens.preview with 2 arguments
+    preview.value = await api.tokens.preview(projectId.value, totalTokens.value)
   } catch (e: any) {
     showSnackbar(e.message || t('distribute.errorPreview'), 'error')
   } finally {

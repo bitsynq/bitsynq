@@ -49,24 +49,21 @@ export const useAuthStore = defineStore('auth', () => {
 	}
 
 	async function logout(): Promise<void> {
-		try {
-			await api.auth.logout()
-		} finally {
-			token.value = null
-			user.value = null
-			localStorage.removeItem('token')
-			api.setToken(null)
-		}
+		// JWT is stateless, just clear local state
+		token.value = null
+		user.value = null
+		localStorage.removeItem('token')
+		api.clearToken()
 	}
 
 	async function fetchCurrentUser(): Promise<void> {
 		if (!token.value) return
 		try {
 			api.setToken(token.value)
-			user.value = await api.users.me()
+			user.value = await api.auth.getProfile()
 		} catch (error) {
 			// Token might be invalid, logout
-			await logout()
+			logout()
 		}
 	}
 
