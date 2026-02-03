@@ -45,6 +45,9 @@ export interface Meeting {
 	meeting_date: string | null;
 	raw_transcript: string | null;
 	parsed_data: string | null;
+	content_hash?: string | null;
+	anchor_tx_hash?: string | null;
+	anchored_at?: string | null;
 	status: 'pending' | 'processed';
 	created_by: string;
 	created_at: string;
@@ -187,3 +190,5 @@ export interface JWTPayload {
 	exp: number;
 	iat: number;
 }
+// Append logic manually or just sed replace. 
+// I'll use sed to insert the fields into Meeting interface

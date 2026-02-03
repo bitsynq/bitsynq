@@ -7,6 +7,7 @@ import type { Env, Meeting, CreateMeetingRequest, ProcessMeetingRequest } from '
 import { verifyToken, generateId } from '../middleware/auth';
 import { parseMeetingTranscript, matchParticipantsToMembers } from '../services/meeting-parser';
 import { StorageService } from '../services/storage';
+import { anchorHash } from '../services/ethereum';
 
 // Extended context with user info
 type AuthContext = {
@@ -17,6 +18,16 @@ type AuthContext = {
 };
 
 const meetings = new Hono<AuthContext>();
+
+/**
+ * Helper: Calculate SHA-256 Hash
+ */
+async function calculateHash(text: string): Promise<string> {
+	const msgBuffer = new TextEncoder().encode(text);
+	const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 /**
  * Authentication middleware
@@ -67,7 +78,7 @@ meetings.get('/:projectId/meetings', async (c) => {
 		}
 
 		const result = await c.env.DB.prepare(
-			`SELECT id, project_id, title, meeting_date, status, created_by, created_at
+			`SELECT id, project_id, title, meeting_date, status, created_by, created_at, content_hash, anchor_tx_hash, anchored_at
        FROM meetings
        WHERE project_id = ?
        ORDER BY created_at DESC`
@@ -121,11 +132,14 @@ meetings.post('/:projectId/meetings', async (c) => {
 
 		const meetingId = generateId();
 		const now = new Date().toISOString();
+		
+		// Calculate content hash (Digital Fingerprint)
+		const contentHash = await calculateHash(body.raw_transcript);
 
 		// Create meeting record
 		await c.env.DB.prepare(
-			`INSERT INTO meetings (id, project_id, title, meeting_date, raw_transcript, parsed_data, status, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
+			`INSERT INTO meetings (id, project_id, title, meeting_date, raw_transcript, parsed_data, status, created_by, created_at, content_hash)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
 		).bind(
 			meetingId,
 			projectId,
@@ -134,7 +148,8 @@ meetings.post('/:projectId/meetings', async (c) => {
 			body.raw_transcript,
 			JSON.stringify(parsedData),
 			userId,
-			now
+			now,
+			contentHash
 		).run();
 
 		// Upload transcript to R2 (Evidence Storage)
@@ -143,8 +158,6 @@ meetings.post('/:projectId/meetings', async (c) => {
 			await storage.uploadTranscript(meetingId, body.raw_transcript);
 		} catch (e) {
 			console.error(`Failed to upload transcript evidence for meeting ${meetingId}:`, e);
-			// Log the error but proceed, as the raw_transcript is already in the DB.
-			// Depending on requirements, this might need to be a hard failure.
 		}
 
 		return c.json({
@@ -156,6 +169,7 @@ meetings.post('/:projectId/meetings', async (c) => {
 			created_by: userId,
 			created_at: now,
 			parsed_data: parsedData,
+			content_hash: contentHash
 		}, 201);
 	} catch (error) {
 		console.error('Create meeting error:', error);
@@ -196,6 +210,72 @@ meetings.get('/:projectId/meetings/:meetingId', async (c) => {
 		return c.json(response);
 	} catch (error) {
 		console.error('Get meeting error:', error);
+		return c.json({ error: 'Internal server error' }, 500);
+	}
+});
+
+/**
+ * POST /api/projects/:projectId/meetings/:meetingId/anchor
+ * Anchor meeting content hash to blockchain (Proof of Existence)
+ */
+meetings.post('/:projectId/meetings/:meetingId/anchor', async (c) => {
+	try {
+		const userId = c.get('userId');
+		const projectId = c.req.param('projectId');
+		const meetingId = c.req.param('meetingId');
+
+		// Check admin access (only admin can spend gas to anchor?)
+		// Or allow any member? Let's say admin for now to save gas.
+		const membership = await checkMembership(c.env.DB, projectId, userId);
+		if (!membership || membership.role !== 'admin') {
+			return c.json({ error: 'Only admins can anchor evidence' }, 403);
+		}
+
+		const meeting = await c.env.DB.prepare(
+			`SELECT content_hash, anchor_tx_hash FROM meetings WHERE id = ? AND project_id = ?`
+		).bind(meetingId, projectId).first<{ content_hash: string; anchor_tx_hash: string }>();
+
+		if (!meeting) {
+			return c.json({ error: 'Meeting not found' }, 404);
+		}
+
+		if (!meeting.content_hash) {
+			return c.json({ error: 'Meeting content hash missing' }, 400);
+		}
+
+		if (meeting.anchor_tx_hash) {
+			return c.json({ error: 'Meeting already anchored', txHash: meeting.anchor_tx_hash }, 400);
+		}
+
+		// Execute On-Chain Anchoring
+		if (!c.env.ETH_PRIVATE_KEY) {
+			return c.json({ error: 'Server ETH wallet not configured' }, 500);
+		}
+
+		const result = await anchorHash(
+			c.env.ETH_PRIVATE_KEY,
+			c.env.ETH_RPC_URL,
+			meeting.content_hash
+		);
+
+		if (!result.success || !result.txHash) {
+			return c.json({ error: 'Blockchain transaction failed: ' + result.error }, 500);
+		}
+
+		// Update DB
+		const now = new Date().toISOString();
+		await c.env.DB.prepare(
+			`UPDATE meetings SET anchor_tx_hash = ?, anchored_at = ? WHERE id = ?`
+		).bind(result.txHash, now, meetingId).run();
+
+		return c.json({ 
+			message: 'Evidence anchored successfully', 
+			txHash: result.txHash,
+			anchoredAt: now
+		});
+
+	} catch (error) {
+		console.error('Anchor meeting error:', error);
 		return c.json({ error: 'Internal server error' }, 500);
 	}
 });
