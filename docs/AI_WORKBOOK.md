@@ -1,103 +1,103 @@
 # Bitsynq AI Workbook
-> 這是 AI 助手的工作手冊，說明如何協助這個專案。
+> A guide for AI assistants helping with this project.
 >
-> **重要原則：先寫文件，再寫程式碼。**
+> **Core Principle: Document first, code later.**
 
-## 工作流程
+## Workflow
 
-### 1. 開始任務前
-1. 閱讀 `docs/SESSION.txt` 了解當前狀態
-2. 閱讀此工作手冊了解專案慣例
-3. 閱讀 `README.md` 了解專案架構
+### 1. Before Starting
+1. Read `docs/SESSION.txt` for current status
+2. Read this workbook for project conventions
+3. Read `README.md` for architecture overview
 
-### 2. 規劃階段 (Planning)
-在動手寫程式碼之前：
+### 2. Planning Phase
+Before writing any code:
 
-1. **更新 SESSION.txt**
-   - 記錄你要做什麼
-   - 列出相關檔案
+1. **Update SESSION.txt**
+   - Document what you plan to do
+   - List related files
 
-2. **如果是新功能，先寫設計文件**
+2. **For new features, write a design doc first**
    ```
    docs/design/
    └── {feature-name}.md
    ```
 
-### 3. 實作階段 (Implementation)
-- 遵循現有程式碼風格
-- 後端：TypeScript + Hono
-- 前端：Vue 3 + Vuetify + Composition API
-- 資料庫：Cloudflare D1 (SQLite)
+### 3. Implementation Phase
+- Follow existing code style
+- Backend: TypeScript + Hono
+- Frontend: Vue 3 + Vuetify + Composition API
+- Database: Cloudflare D1 (SQLite)
 
-### 4. 完成後
-- 更新 `docs/SESSION.txt` 的 Next Steps
-- 提交變更時分開 commit：
-  - docs: 文件變更
-  - feat: 新功能
-  - fix: 修復
-  - refactor: 重構
+### 4. After Completion
+- Update `docs/SESSION.txt` with Next Steps
+- Make separate commits:
+  - docs: documentation changes
+  - feat: new features
+  - fix: bug fixes
+  - refactor: code restructuring
 
 ---
 
-## 專案結構速查
+## Project Structure
 
 ```
 bitsynq/
-├── worker/                 # Cloudflare Worker 後端
+├── worker/                 # Cloudflare Worker backend
 │   ├── src/
-│   │   ├── routes/         # API 路由 (Hono)
-│   │   ├── services/       # 業務邏輯
-│   │   ├── middleware/     # 認證等中間件
+│   │   ├── routes/         # API routes (Hono)
+│   │   ├── services/       # Business logic
+│   │   ├── middleware/     # Auth middleware
 │   │   └── db/             # SQL Schema & Migrations
-│   └── wrangler.toml       # Worker 設定
-├── frontend/               # Vue 3 前端
+│   └── wrangler.toml       # Worker config
+├── frontend/               # Vue 3 frontend
 │   ├── src/
-│   │   ├── views/          # 頁面元件
-│   │   ├── components/     # 可重用元件
-│   │   ├── stores/         # Pinia 狀態
-│   │   └── services/       # API 封裝
+│   │   ├── views/          # Page components
+│   │   ├── components/     # Reusable components
+│   │   ├── stores/         # Pinia state
+│   │   └── services/       # API wrapper
 │   └── vite.config.ts
-├── contracts/              # Solidity 智能合約
-└── docs/                   # 文件區
-    ├── SESSION.txt         # 開發進度追蹤
-    └── AI_WORKBOOK.md      # 本文件
+├── contracts/              # Solidity smart contracts
+└── docs/                   # Documentation
+    ├── SESSION.txt         # Development progress
+    └── AI_WORKBOOK.md      # This file
 ```
 
 ---
 
-## 常用任務
+## Common Tasks
 
-### 新增 API Endpoint
-1. 在 `worker/src/routes/` 建立或修改路由
-2. 在 `worker/src/types.ts` 新增型別
-3. 在 `frontend/src/services/api.ts` 新增對應方法
-4. 更新 `README.md` 的 API 端點列表
+### Adding an API Endpoint
+1. Create/modify route in `worker/src/routes/`
+2. Add types in `worker/src/types.ts`
+3. Add API method in `frontend/src/services/api.ts`
+4. Update API endpoints in `README.md`
 
-### 新增資料庫欄位
-1. 在 `worker/src/db/` 新增 migration SQL
-2. 更新 `schema.sql` (完整 schema 記錄)
-3. 更新相關 routes 和 types
+### Adding Database Columns
+1. Create migration SQL in `worker/src/db/`
+2. Update `schema.sql` (complete schema record)
+3. Update related routes and types
 
-### 新增前端頁面
-1. 在 `frontend/src/views/` 建立 Vue 元件
-2. 在 `frontend/src/router/index.ts` 新增路由
-3. 更新導航 (如適用)
+### Adding Frontend Pages
+1. Create Vue component in `frontend/src/views/`
+2. Add route in `frontend/src/router/index.ts`
+3. Update navigation if needed
 
 ---
 
-## Commit 慣例
+## Commit Convention
 
 ```
-類型(範圍): 簡短描述
+type(scope): short description
 
-- docs: 文件
-- feat: 新功能
-- fix: 修復
-- refactor: 重構
-- chore: 雜項
+- docs: documentation
+- feat: new feature
+- fix: bug fix
+- refactor: code restructuring
+- chore: maintenance
 ```
 
-範例：
+Examples:
 ```
 docs: add SESSION.txt and AI workbook
 feat(anchor): add blockchain evidence anchoring
@@ -106,13 +106,13 @@ fix(meetings): handle null content_hash
 
 ---
 
-## 重要提醒
+## Key Reminders
 
-1. **先文件後程式碼** - 在 SESSION.txt 記錄後再動手
-2. **分開 commit** - 文件和程式分開提交
-3. **保持 SESSION.txt 更新** - 讓下一個 AI 知道進度
-4. **遵循型別安全** - TypeScript 不要用 any
-5. **測試路徑** - 任何 API 變更要測試
+1. **Document first, code later** - Update SESSION.txt before coding
+2. **Separate commits** - Split docs and code into different commits
+3. **Keep SESSION.txt updated** - Help the next AI know the status
+4. **Type safety** - Avoid `any` in TypeScript
+5. **Test endpoints** - Test any API changes
 
 ---
 

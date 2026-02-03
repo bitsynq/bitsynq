@@ -3,22 +3,22 @@
 
 ## 🎯 Current Progress
 
-### Implemented Features (Uncommitted)
-以下功能已完成開發，等待 commit：
+### Implemented Features (Committed)
+The following features have been implemented and committed:
 
-1. **Digital Anchoring (區塊鏈證據錨定)**
-   - 新增 `anchorHash()` 函數在 `worker/src/services/ethereum.ts`
-   - 會議內容 SHA-256 hash 可錨定至區塊鏈 (0 ETH 自我交易)
-   - 新增 API 端點 `POST /api/projects/:id/meetings/:meetingId/anchor`
-   - 資料庫遷移：`worker/src/db/add-anchoring.sql`
-   - 前端已整合 anchor 按鈕 (ProjectView.vue)
+1. **Digital Anchoring (Blockchain Evidence)**
+   - Added `anchorHash()` function in `worker/src/services/ethereum.ts`
+   - Meeting content SHA-256 hash can be anchored to blockchain (0 ETH self-transaction)
+   - New API endpoint `POST /api/projects/:id/meetings/:meetingId/anchor`
+   - Database migration: `worker/src/db/add-anchoring.sql`
+   - Frontend integrated with anchor button (ProjectView.vue)
 
 2. **Meeting Content Hash**
-   - 上傳會議時自動計算 content_hash
-   - 用於防篡改驗證
+   - Automatically calculates content_hash when uploading meetings
+   - Used for tamper-proof verification
 
 ### Database Changes Required
-執行以下 SQL 以支援新功能：
+Run the following SQL to support new features:
 ```sql
 ALTER TABLE meetings ADD COLUMN content_hash TEXT;
 ALTER TABLE meetings ADD COLUMN anchor_tx_hash TEXT;
@@ -26,29 +26,29 @@ ALTER TABLE meetings ADD COLUMN anchored_at TEXT;
 CREATE INDEX IF NOT EXISTS idx_meetings_hash ON meetings(content_hash);
 ```
 
-## 📋 Next Steps (下一步)
+## 📋 Next Steps
 
 ### Priority 1: Complete Anchoring Feature
-- [ ] 測試 anchor API endpoint
-- [ ] 前端顯示已錨定狀態
-- [ ] 加入驗證功能 (verify anchor)
+- [ ] Test anchor API endpoint
+- [ ] Display anchored status in frontend
+- [ ] Add verification function (verify anchor)
 
 ### Priority 2: Contribution Display Improvements
-- [ ] 用戶貢獻度歷史圖表
-- [ ] Meeting detail 頁面優化
+- [ ] User contribution history chart
+- [ ] Optimize meeting detail page
 
 ### Priority 3: Token Distribution
-- [ ] BatchDistributor 合約部署
-- [ ] 整合批次發放 UI
+- [ ] Deploy BatchDistributor contract
+- [ ] Integrate batch distribution UI
 
-## 🔧 Environment Setup Notes
+## 🔧 Environment Setup
 
 ### Local Development
 ```bash
-# 後端
+# Backend
 cd worker && npm run dev  # http://localhost:8787
 
-# 前端
+# Frontend
 cd frontend && npm run dev  # http://localhost:5173
 ```
 
@@ -61,27 +61,27 @@ ETH_RPC_URL=<sepolia-rpc-url>
 
 ## 📁 Key File Locations
 
-| 功能 | 檔案路徑 |
-|------|----------|
-| 會議解析服務 | `worker/src/services/meeting-parser.ts` |
-| 以太坊服務 | `worker/src/services/ethereum.ts` |
-| 會議路由 | `worker/src/routes/meetings.ts` |
-| 專案主頁 | `frontend/src/views/ProjectView.vue` |
-| API 封裝 | `frontend/src/services/api.ts` |
-| 資料庫 Schema | `worker/src/db/schema.sql` |
+| Feature | File Path |
+|---------|-----------|
+| Meeting Parser | `worker/src/services/meeting-parser.ts` |
+| Ethereum Service | `worker/src/services/ethereum.ts` |
+| Meetings Route | `worker/src/routes/meetings.ts` |
+| Project View | `frontend/src/views/ProjectView.vue` |
+| API Wrapper | `frontend/src/services/api.ts` |
+| DB Schema | `worker/src/db/schema.sql` |
 
 ## 💡 Technical Notes
 
 ### Anchoring Flow
-1. 用戶上傳會議 → 自動計算 content_hash
-2. Admin 點擊 "Anchor" → 發送 0 ETH tx 帶 hash data
-3. tx 確認後存 anchor_tx_hash + anchored_at
-4. 任何人可透過 tx data 驗證原始內容
+1. User uploads meeting → auto-calculate content_hash
+2. Admin clicks "Anchor" → send 0 ETH tx with hash as data
+3. After tx confirms → save anchor_tx_hash + anchored_at
+4. Anyone can verify original content via tx data
 
 ### Security Considerations
-- 只有 admin 可以 anchor (花費 gas)
-- hash 是純文字 SHA-256，鏈上可驗證
-- R2 同時存原始 transcript 作備份
+- Only admins can anchor (they pay gas)
+- Hash is plain SHA-256, verifiable on-chain
+- R2 stores original transcript as backup
 
 ---
 *Last updated: 2026-02-03 by AI Assistant*
