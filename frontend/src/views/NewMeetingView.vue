@@ -24,15 +24,42 @@
               {{ aiStatus.supported ? 'Chrome AI Ready' : 'AI Not Supported' }}
             </v-chip>
           </div>
-          
+
+          <!-- AI Setup Instructions -->
           <v-alert
             v-if="aiStatus.checked && !aiStatus.supported"
-            type="info"
+            type="warning"
             variant="tonal"
-            density="compact"
-            class="mb-4 text-caption"
+            class="mb-4"
           >
-            {{ aiStatus.message }}
+            <div class="d-flex align-center justify-space-between">
+              <span class="text-subtitle-2">Chrome Built-in AI Not Available</span>
+              <v-btn
+                size="x-small"
+                variant="text"
+                @click="showAiInstructions = !showAiInstructions"
+              >
+                {{ showAiInstructions ? 'Hide' : 'Setup' }}
+              </v-btn>
+            </div>
+            <div v-if="showAiInstructions" class="mt-3 text-body-2">
+              <p class="mb-2"><strong>Requirements:</strong></p>
+              <ul class="pl-4 mb-3">
+                <li>Chrome 127+ (Canary or Dev channel recommended)</li>
+                <li>macOS 13+, Windows 10/11, or Linux</li>
+                <li class="text-error font-weight-medium">⚠️ 22GB+ free disk space for AI model</li>
+              </ul>
+              <p class="mb-2"><strong>Setup Steps:</strong></p>
+              <ol class="pl-4">
+                <li>Open <code>chrome://flags/#optimization-guide-on-device-model</code> → Enable</li>
+                <li>Open <code>chrome://flags/#prompt-api-for-gemini-nano</code> → Enable</li>
+                <li>Restart Chrome</li>
+                <li>Open <code>chrome://components</code> → Check "Optimization Guide On Device Model"</li>
+              </ol>
+              <p class="mt-3 text-caption text-medium-emphasis">
+                Without AI, regex parsing still works. AI provides smarter contribution analysis.
+              </p>
+            </div>
           </v-alert>
 
           <p class="text-body-2 text-medium-emphasis mb-4">
@@ -81,7 +108,7 @@
                 AI Analyze
               </v-btn>
             </div>
-            
+
             <div v-if="aiStatus.supported && !meetingId" class="text-caption text-medium-emphasis mt-2 text-center">
               * Please upload/parse first to create meeting record, then use AI analysis.
             </div>
@@ -257,6 +284,7 @@ const aiResult = ref<AIAnalysisResult | null>(null)
 
 // AI Status
 const aiStatus = ref({ checked: false, supported: false, message: '' })
+const showAiInstructions = ref(false)
 
 const editableParticipants = ref<Array<{
   name: string
@@ -394,10 +422,10 @@ async function handleAiAnalyze() {
   try {
     const result = await llmService.analyzeMeeting(transcript.value)
     aiResult.value = result
-    
+
     // Merge AI results with existing participant data or replace it
     // We try to match names from AI with existing names to preserve matched_user_id
-    
+
     // Temporarily map existing matches
     const existingMatches = new Map<string, string | null>();
     editableParticipants.value.forEach(p => {
@@ -409,7 +437,7 @@ async function handleAiAnalyze() {
       // Try to find existing match
       const lowerName = p.name.toLowerCase();
       let matchedId = existingMatches.get(lowerName) || null;
-      
+
       // If not exact match, try partial
       if (!matchedId) {
         for (const [name, id] of existingMatches) {
@@ -419,11 +447,11 @@ async function handleAiAnalyze() {
           }
         }
       }
-      
+
       // If still no match, try to match with project members (fallback)
       if (!matchedId && project.value?.members) {
-         const member = project.value.members.find(m => 
-           m.display_name.toLowerCase().includes(lowerName) || 
+         const member = project.value.members.find(m =>
+           m.display_name.toLowerCase().includes(lowerName) ||
            lowerName.includes(m.display_name.toLowerCase())
          );
          if (member) matchedId = member.id;
@@ -438,9 +466,9 @@ async function handleAiAnalyze() {
         reasoning: p.reasoning
       };
     });
-    
+
     editableParticipants.value = newParticipants;
-    
+
     showSnackbar('AI Analysis Complete', 'success')
 
   } catch (e: any) {
