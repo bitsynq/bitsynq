@@ -1,0 +1,87 @@
+# Bitsynq Development Session Notes
+## Date: 2026-02-03
+
+## 🎯 Current Progress
+
+### Implemented Features (Uncommitted)
+以下功能已完成開發，等待 commit：
+
+1. **Digital Anchoring (區塊鏈證據錨定)**
+   - 新增 `anchorHash()` 函數在 `worker/src/services/ethereum.ts`
+   - 會議內容 SHA-256 hash 可錨定至區塊鏈 (0 ETH 自我交易)
+   - 新增 API 端點 `POST /api/projects/:id/meetings/:meetingId/anchor`
+   - 資料庫遷移：`worker/src/db/add-anchoring.sql`
+   - 前端已整合 anchor 按鈕 (ProjectView.vue)
+
+2. **Meeting Content Hash**
+   - 上傳會議時自動計算 content_hash
+   - 用於防篡改驗證
+
+### Database Changes Required
+執行以下 SQL 以支援新功能：
+```sql
+ALTER TABLE meetings ADD COLUMN content_hash TEXT;
+ALTER TABLE meetings ADD COLUMN anchor_tx_hash TEXT;
+ALTER TABLE meetings ADD COLUMN anchored_at TEXT;
+CREATE INDEX IF NOT EXISTS idx_meetings_hash ON meetings(content_hash);
+```
+
+## 📋 Next Steps (下一步)
+
+### Priority 1: Complete Anchoring Feature
+- [ ] 測試 anchor API endpoint
+- [ ] 前端顯示已錨定狀態
+- [ ] 加入驗證功能 (verify anchor)
+
+### Priority 2: Contribution Display Improvements
+- [ ] 用戶貢獻度歷史圖表
+- [ ] Meeting detail 頁面優化
+
+### Priority 3: Token Distribution
+- [ ] BatchDistributor 合約部署
+- [ ] 整合批次發放 UI
+
+## 🔧 Environment Setup Notes
+
+### Local Development
+```bash
+# 後端
+cd worker && npm run dev  # http://localhost:8787
+
+# 前端
+cd frontend && npm run dev  # http://localhost:5173
+```
+
+### Required Environment Variables (Worker)
+```
+JWT_SECRET=<your-secret>
+ETH_PRIVATE_KEY=<admin-wallet-private-key>
+ETH_RPC_URL=<sepolia-rpc-url>
+```
+
+## 📁 Key File Locations
+
+| 功能 | 檔案路徑 |
+|------|----------|
+| 會議解析服務 | `worker/src/services/meeting-parser.ts` |
+| 以太坊服務 | `worker/src/services/ethereum.ts` |
+| 會議路由 | `worker/src/routes/meetings.ts` |
+| 專案主頁 | `frontend/src/views/ProjectView.vue` |
+| API 封裝 | `frontend/src/services/api.ts` |
+| 資料庫 Schema | `worker/src/db/schema.sql` |
+
+## 💡 Technical Notes
+
+### Anchoring Flow
+1. 用戶上傳會議 → 自動計算 content_hash
+2. Admin 點擊 "Anchor" → 發送 0 ETH tx 帶 hash data
+3. tx 確認後存 anchor_tx_hash + anchored_at
+4. 任何人可透過 tx data 驗證原始內容
+
+### Security Considerations
+- 只有 admin 可以 anchor (花費 gas)
+- hash 是純文字 SHA-256，鏈上可驗證
+- R2 同時存原始 transcript 作備份
+
+---
+*Last updated: 2026-02-03 by AI Assistant*

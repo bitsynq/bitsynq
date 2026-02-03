@@ -124,6 +124,13 @@ cd worker
 npm run deploy
 ```
 
+## 文件 Documentation
+
+詳細開發文件請參考 `docs/` 目錄：
+
+- **[SESSION.txt](docs/SESSION.txt)** - 當前開發進度與下一步規劃
+- **[AI_WORKBOOK.md](docs/AI_WORKBOOK.md)** - AI 助手工作手冊（先文件，後程式碼）
+
 ## License
 
 MIT
