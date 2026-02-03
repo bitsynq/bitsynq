@@ -17,6 +17,13 @@ The following features have been implemented and committed:
    - Automatically calculates content_hash when uploading meetings
    - Used for tamper-proof verification
 
+3. **Chrome Built-in AI Integration** (In-Browser)
+   - Uses Chrome's Gemini Nano for offline transcript analysis
+   - Service: `frontend/src/services/llm.ts`
+   - UI: `frontend/src/views/NewMeetingView.vue`
+   - No API key required - runs locally in Chrome
+   - Fallback to regex parsing for unsupported browsers
+
 ### Database Changes Required
 Run the following SQL to support new features:
 ```sql
