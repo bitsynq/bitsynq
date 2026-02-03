@@ -241,3 +241,40 @@ export function parseTokenAmount(amount: string | number, decimals: number): big
 export function isValidAddress(address: string): boolean {
 	return ethers.isAddress(address);
 }
+
+/**
+ * Anchor a hash to the blockchain
+ * Sends a 0 ETH transaction with the hash as data
+ */
+export async function anchorHash(
+	privateKey: string,
+	rpcUrl: string,
+	hash: string
+): Promise<TransferResult> {
+	try {
+		const wallet = getAdminWallet(privateKey, rpcUrl);
+		// Ensure hash is properly hex formatted
+		const data = hash.startsWith('0x') ? hash : '0x' + hash;
+		
+		// Send to self (simplest way to anchor data)
+		const tx = await wallet.sendTransaction({
+			to: wallet.address,
+			value: 0,
+			data: data
+		});
+		
+		// Wait for 1 confirmation
+		const receipt = await tx.wait();
+		
+		return {
+			success: true,
+			txHash: receipt ? receipt.hash : undefined
+		};
+	} catch (error) {
+		console.error('Anchor hash error:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : 'Unknown error'
+		};
+	}
+}
