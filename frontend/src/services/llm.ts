@@ -138,7 +138,26 @@ Return JSON only.
       // Clean up markdown code blocks if present
       const jsonStr = resultStr.replace(/```json/g, "").replace(/```/g, "").trim();
 
-      const result = JSON.parse(jsonStr) as AIAnalysisResult;
+      console.log('AI Raw Response:', resultStr);
+      console.log('AI Parsed JSON:', jsonStr);
+
+      const rawResult = JSON.parse(jsonStr);
+      console.log('AI Result Object:', rawResult);
+
+      // Normalize the result - AI might use different field names
+      const result: AIAnalysisResult = {
+        participants: (rawResult.participants || []).map((p: any) => ({
+          name: p.name || p.participant || 'Unknown',
+          contributions: p.contributions || p.tasks || [],
+          // Handle different possible field names for ratio
+          suggested_ratio: p.suggested_ratio ?? p.ratio ?? p.contribution_ratio ?? p.percentage ?? 0,
+          reasoning: p.reasoning || p.reason || p.justification || ''
+        })),
+        summary: rawResult.summary || rawResult.meeting_summary || '',
+        sentiment_score: rawResult.sentiment_score ?? rawResult.sentiment ?? 0.5
+      };
+
+      console.log('Normalized Result:', result);
 
       // Normalize ratios
       const total = result.participants.reduce((sum, p) => sum + p.suggested_ratio, 0);
