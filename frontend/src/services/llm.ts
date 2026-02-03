@@ -158,6 +158,7 @@ Return JSON only.
       };
 
       console.log('Normalized Result:', result);
+      console.log('Participants with ratios:', result.participants.map(p => ({ name: p.name, ratio: p.suggested_ratio })));
 
       // Normalize ratios
       const total = result.participants.reduce((sum, p) => sum + p.suggested_ratio, 0);
