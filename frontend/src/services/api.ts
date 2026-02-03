@@ -160,7 +160,7 @@ class ApiService {
 
   constructor() {
     this.client = axios.create({
-      baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8787/api',
+      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787/api',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -214,7 +214,7 @@ class ApiService {
   // Meetings
   meetings = {
     list: (projectId: string) => this.client.get<Meeting[]>(`/projects/${projectId}/meetings`).then(r => r.data),
-    create: (projectId: string, data: any) => 
+    create: (projectId: string, data: any) =>
       this.client.post<{ id: string; parsed_data: ParsedMeetingData }>(`/projects/${projectId}/meetings`, data).then(r => r.data),
     anchor: (projectId: string, meetingId: string) => this.client.post(`/projects/${projectId}/meetings/${meetingId}/anchor`).then(r => r.data),
     process: (projectId: string, meetingId: string, contributions: any[]) =>
