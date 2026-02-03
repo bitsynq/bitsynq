@@ -45,6 +45,9 @@ export interface Meeting {
   status: 'pending' | 'processed'
   created_at: string
   created_by?: string
+  content_hash?: string
+  anchor_tx_hash?: string
+  anchored_at?: string
 }
 
 export interface ParsedParticipant {
@@ -213,6 +216,7 @@ class ApiService {
     list: (projectId: string) => this.client.get<Meeting[]>(`/projects/${projectId}/meetings`).then(r => r.data),
     create: (projectId: string, data: any) => 
       this.client.post<{ id: string; parsed_data: ParsedMeetingData }>(`/projects/${projectId}/meetings`, data).then(r => r.data),
+    anchor: (projectId: string, meetingId: string) => this.client.post(`/projects/${projectId}/meetings/${meetingId}/anchor`).then(r => r.data),
     process: (projectId: string, meetingId: string, contributions: any[]) =>
       this.client.post(`/projects/${projectId}/meetings/${meetingId}/process`, { contributions }).then(r => r.data),
     delete: (projectId: string, meetingId: string) =>
@@ -247,3 +251,5 @@ class ApiService {
 }
 
 export const api = new ApiService()
+// Append anchor method to meetings
+// I'll rewrite the meetings object using sed or just append it before 'process'

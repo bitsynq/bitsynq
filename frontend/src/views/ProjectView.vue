@@ -169,6 +169,45 @@
                 </template>
                 <template #append>
                   <div class="d-flex align-center gap-2">
+                    
+                    <!-- Digital Fingerprint -->
+                    <v-tooltip location="bottom" v-if="meeting.content_hash">
+                      <template #activator="{ props }">
+                        <v-chip size="x-small" color="info" variant="outlined" class="mr-2 font-weight-regular" v-bind="props">
+                          <v-icon start size="small">mdi-fingerprint</v-icon>
+                          Fingerprint
+                        </v-chip>
+                      </template>
+                      <div class="text-caption">SHA-256: {{ meeting.content_hash }}</div>
+                    </v-tooltip>
+
+                    <!-- Anchored State -->
+                    <v-btn
+                      v-if="meeting.anchor_tx_hash"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="success"
+                      :href="`https://sepolia.etherscan.io/tx/${meeting.anchor_tx_hash}`"
+                      target="_blank"
+                      title="Proof of Existence (Anchored)"
+                    >
+                      <v-icon>mdi-link-lock</v-icon>
+                    </v-btn>
+
+                    <!-- Anchor Action -->
+                    <v-btn
+                      v-else-if="project.current_user_role === 'admin' && meeting.content_hash"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="secondary"
+                      @click="confirmAnchorMeeting(meeting)"
+                      title="Anchor Evidence to Blockchain"
+                    >
+                      <v-icon>mdi-anchor</v-icon>
+                    </v-btn>
+
                     <v-chip
                       :color="meeting.status === 'processed' ? 'success' : 'warning'"
                       size="small"
@@ -339,6 +378,35 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Anchor Meeting Confirmation Dialog -->
+    <v-dialog v-model="showAnchorDialog" max-width="450">
+      <v-card>
+        <v-card-title>
+          <v-icon start color="secondary">mdi-anchor</v-icon>
+          Anchor Evidence
+        </v-card-title>
+        <v-card-text>
+          <p class="mb-4">This will permanently record the digital fingerprint of this meeting on the Ethereum blockchain.</p>
+          <div class="bg-grey-lighten-4 pa-3 rounded text-caption mb-4">
+            <strong>Fingerprint (SHA-256):</strong><br/>
+            <span class="text-mono">{{ meetingToAnchor?.content_hash }}</span>
+          </div>
+          <p class="text-caption text-medium-emphasis">Transaction fee (Gas) will be covered by the system.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showAnchorDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn
+            color="secondary"
+            :loading="anchoringMeeting"
+            @click="handleAnchorMeeting"
+          >
+            Confirm Anchor
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -375,6 +443,10 @@ const addingMember = ref(false)
 const showDeleteMeetingDialog = ref(false)
 const meetingToDelete = ref<Meeting | null>(null)
 const deletingMeeting = ref(false)
+
+const showAnchorDialog = ref(false)
+const meetingToAnchor = ref<Meeting | null>(null)
+const anchoringMeeting = ref(false)
 
 const contributionHeaders = computed(() => [
   { title: t('project.contributions.columns.member'), key: 'user_display_name' },
@@ -477,6 +549,30 @@ async function handleDeleteMeeting() {
   } finally {
     deletingMeeting.value = false
     meetingToDelete.value = null
+  }
+}
+
+function confirmAnchorMeeting(meeting: Meeting) {
+  meetingToAnchor.value = meeting
+  showAnchorDialog.value = true
+}
+
+async function handleAnchorMeeting() {
+  if (!meetingToAnchor.value) return
+
+  anchoringMeeting.value = true
+  try {
+    // Call anchor API
+    await api.meetings.anchor(projectId.value, meetingToAnchor.value.id)
+    showSnackbar('Evidence anchored successfully!', 'success')
+    showAnchorDialog.value = false
+    await loadMeetings() // Refresh to see tx hash
+  } catch (e: any) {
+    console.error(e)
+    showSnackbar(e.message || 'Failed to anchor evidence', 'error')
+  } finally {
+    anchoringMeeting.value = false
+    meetingToAnchor.value = null
   }
 }
 
