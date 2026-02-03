@@ -44,6 +44,12 @@ const router = createRouter({
 			meta: { requiresAuth: true },
 		},
 		{
+			path: '/projects/:id/meetings/:meetingId/edit',
+			name: 'edit-meeting',
+			component: () => import('@/views/EditMeetingView.vue'),
+			meta: { requiresAuth: true },
+		},
+		{
 			path: '/projects/:id/distribute',
 			name: 'distribute',
 			component: () => import('@/views/DistributeView.vue'),

@@ -92,6 +92,65 @@ meetings.get('/:projectId/meetings', async (c) => {
 });
 
 /**
+ * GET /api/projects/:projectId/meetings/:meetingId
+ * Get a single meeting with its raw transcript
+ */
+meetings.get('/:projectId/meetings/:meetingId', async (c) => {
+	try {
+		const userId = c.get('userId');
+		const projectId = c.req.param('projectId');
+		const meetingId = c.req.param('meetingId');
+
+		// Check membership
+		const membership = await checkMembership(c.env.DB, projectId, userId);
+		if (!membership) {
+			return c.json({ error: 'Project not found or access denied' }, 404);
+		}
+
+		// Get meeting from database
+		const meeting = await c.env.DB.prepare(
+			`SELECT id, project_id, title, meeting_date, status, created_by, created_at, content_hash, anchor_tx_hash, anchored_at
+       FROM meetings
+       WHERE id = ? AND project_id = ?`
+		).bind(meetingId, projectId).first();
+
+		if (!meeting) {
+			return c.json({ error: 'Meeting not found' }, 404);
+		}
+
+		// Get raw transcript from KV storage
+		const storage = new StorageService(c.env);
+		const rawTranscript = await storage.getTranscript(meetingId);
+
+		// Re-parse transcript to get parsed data
+		let parsedData = null;
+		if (rawTranscript) {
+			const members = await c.env.DB.prepare(
+				`SELECT u.id, u.display_name, u.email, pm.role
+         FROM project_members pm
+         JOIN users u ON pm.user_id = u.id
+         WHERE pm.project_id = ?`
+			).bind(projectId).all();
+
+			parsedData = parseMeetingTranscript(rawTranscript);
+			parsedData.participants = matchParticipantsToMembers(
+				parsedData.participants,
+				members.results as Array<{ id: string; display_name: string; email: string; role: string }>
+			);
+		}
+
+		return c.json({
+			...meeting,
+			raw_transcript: rawTranscript || '',
+			parsed_data: parsedData
+		});
+	} catch (error) {
+		console.error('Get meeting error:', error);
+		return c.json({ error: 'Internal server error' }, 500);
+	}
+});
+
+/**
  * POST /api/projects/:projectId/meetings
  * Upload a new meeting transcript
  */
@@ -132,7 +191,7 @@ meetings.post('/:projectId/meetings', async (c) => {
 
 		const meetingId = generateId();
 		const now = new Date().toISOString();
-		
+
 		// Calculate content hash (Digital Fingerprint)
 		const contentHash = await calculateHash(body.raw_transcript);
 
@@ -268,8 +327,8 @@ meetings.post('/:projectId/meetings/:meetingId/anchor', async (c) => {
 			`UPDATE meetings SET anchor_tx_hash = ?, anchored_at = ? WHERE id = ?`
 		).bind(result.txHash, now, meetingId).run();
 
-		return c.json({ 
-			message: 'Evidence anchored successfully', 
+		return c.json({
+			message: 'Evidence anchored successfully',
 			txHash: result.txHash,
 			anchoredAt: now
 		});

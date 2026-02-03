@@ -169,7 +169,7 @@
                 </template>
                 <template #append>
                   <div class="d-flex align-center gap-2">
-                    
+
                     <!-- Digital Fingerprint -->
                     <v-tooltip location="bottom" v-if="meeting.content_hash">
                       <template #activator="{ props }">
@@ -215,6 +215,19 @@
                     >
                       {{ meeting.status === 'processed' ? $t('project.meetings.processed') : $t('project.meetings.pending') }}
                     </v-chip>
+
+                    <!-- Edit Meeting (for pending) -->
+                    <v-btn
+                      v-if="meeting.status !== 'processed'"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      :to="`/projects/${project.id}/meetings/${meeting.id}/edit`"
+                      title="Edit & Process Meeting"
+                    >
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
 
                     <v-btn
                       v-if="meeting.status !== 'processed' && (project.current_user_role === 'admin' || meeting.created_by === authStore.currentUser?.id)"
