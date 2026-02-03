@@ -25,12 +25,41 @@ declare global {
       };
     };
   }
+  // New Chrome API - LanguageModel is directly on globalThis
+  var LanguageModel: {
+    availability: () => Promise<'available' | 'downloadable' | 'downloading' | 'unavailable'>;
+    create: (options?: { systemPrompt?: string }) => Promise<AILanguageModelSession>;
+  } | undefined;
 }
 
 interface AILanguageModelSession {
   prompt: (text: string) => Promise<string>;
   promptStreaming: (text: string) => AsyncIterable<string>;
   destroy: () => void;
+}
+
+// Helper to get the language model API (supports both old and new Chrome API)
+function getLanguageModelAPI() {
+  // Try new API first (LanguageModel global)
+  if (typeof LanguageModel !== 'undefined') {
+    return {
+      checkAvailability: async () => {
+        const status = await LanguageModel!.availability();
+        if (status === 'available') return { available: 'readily' as const };
+        if (status === 'downloadable' || status === 'downloading') return { available: 'after-download' as const };
+        return { available: 'no' as const };
+      },
+      create: (options?: { systemPrompt?: string }) => LanguageModel!.create(options)
+    };
+  }
+  // Fall back to old API (window.ai.languageModel)
+  if (window.ai?.languageModel) {
+    return {
+      checkAvailability: () => window.ai!.languageModel.capabilities(),
+      create: (options?: { systemPrompt?: string }) => window.ai!.languageModel.create(options)
+    };
+  }
+  return null;
 }
 
 export class LLMService {
@@ -40,15 +69,16 @@ export class LLMService {
    * Check if Chrome AI is supported and ready
    */
   async checkSupport(): Promise<{ supported: boolean; message: string }> {
-    if (!window.ai || !window.ai.languageModel) {
-      return { 
-        supported: false, 
-        message: 'Your browser does not support Chrome Built-in AI. Please use Chrome Canary or Dev channel and enable "Prompt API for Gemini Nano".' 
+    const api = getLanguageModelAPI();
+    if (!api) {
+      return {
+        supported: false,
+        message: 'Your browser does not support Chrome Built-in AI. Please use Chrome Canary or Dev channel and enable "Prompt API for Gemini Nano".'
       };
     }
 
     try {
-      const capabilities = await window.ai.languageModel.capabilities();
+      const capabilities = await api.checkAvailability();
       if (capabilities.available === 'no') {
         return { supported: false, message: 'AI model is not available on this device.' };
       }
@@ -66,7 +96,8 @@ export class LLMService {
    * Initialize the model session
    */
   async init() {
-    if (!this.session && window.ai) {
+    const api = getLanguageModelAPI();
+    if (!this.session && api) {
       const systemPrompt = `
 You are an expert project manager. Analyze meeting transcripts to identify contributions.
 Return ONLY valid JSON.
@@ -79,7 +110,7 @@ Output format:
   "sentiment_score": 0.8
 }
 `;
-      this.session = await window.ai.languageModel.create({ systemPrompt });
+      this.session = await api.create({ systemPrompt });
     }
   }
 
@@ -103,12 +134,12 @@ Return JSON only.
 
     try {
       const resultStr = await this.session.prompt(prompt);
-      
+
       // Clean up markdown code blocks if present
       const jsonStr = resultStr.replace(/```json/g, "").replace(/```/g, "").trim();
-      
+
       const result = JSON.parse(jsonStr) as AIAnalysisResult;
-      
+
       // Normalize ratios
       const total = result.participants.reduce((sum, p) => sum + p.suggested_ratio, 0);
       if (Math.abs(total - 100) > 1 && total > 0) {
@@ -116,7 +147,7 @@ Return JSON only.
           p.suggested_ratio = parseFloat(((p.suggested_ratio / total) * 100).toFixed(2));
         });
       }
-      
+
       return result;
     } catch (e) {
       console.error("AI Analysis failed:", e);
